@@ -1,0 +1,3 @@
+{
+    "mensagem_padrao": "Saudações {nome},\n\nRecebemos seu contato, porém sem um número de contato válido. Atualmente trabalhamos com o Whatsapp. Pedimos que nos envie um telefone para contato que nosso comercial te retornará para falar sobre seu projeto.\n\nVocê pode também colar o link abaixo no seu navegador de internet e nos contatar diretamente.\nhttps://api.whatsapp.com/send?phone=5511982934015\n\nAbaixo o conteúdo de sua mensagem:\nNecessidade do Cliente: {mensagem}\nEmail: {email}"
+}

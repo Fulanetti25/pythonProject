@@ -1,0 +1,145 @@
+import os
+import logging
+import traceback
+import inspect
+from blessed import Terminal
+from datetime import datetime, timedelta
+from SCRIPTS.functions.cls_TelaLog import desenhar_tela, fn_ultimo_log
+from SCRIPTS.functions.cls_Logging import main as log_registra
+from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
+from SCRIPTS.functions.cls_DiasUteis import df_DiasUteis
+from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+from SCRIPTS.process.cls_Exporta import main as exporta_main
+from SCRIPTS.process.cls_GooglePalavras import main as google_main
+from SCRIPTS.process.cls_VerificaMail import main as leads_main
+
+def etl_VerificaAgendamento(processo, horario_atual):
+    return processo['Horario'] == horario_atual.strftime("%H:%M")
+
+def etl_ExecutaProcesso(processo):
+    if processo != "N/A":
+        log_info = "F1"
+        varl_detail = None
+
+        try:
+            log_info = "F2"
+            log_info = "F3"
+            with term.location(0, 60):
+                print("Executando", processo['Nome'], ", Aguarde...")
+
+            nome_processo = processo['Processo']
+            func = globals().get(nome_processo)
+            if func:
+                resultado = func()
+            else:
+                raise ValueError(f"Função {nome_processo} não encontrada.")
+
+            log_info = "F0"
+
+        except Exception as e:
+            varl_detail = f"Erro na etapa {log_info}, {e}"
+            log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+            log_info = "F99"
+            raise
+
+        finally:
+            pass
+
+        return {"Resultado": str(nome_processo), 'Status_log': log_info, 'Detail_log': varl_detail}
+
+def main():
+    varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
+    global term
+    global exec_info
+    exec_info = "\nLI\n"
+
+    exec_info += "\tGI\n"
+    varg_erro = None
+
+    term = Terminal()
+    proxima_execucao = None
+    processos_futuros = None
+
+    df_data = df_DiasUteis(datetime.now(), datetime.now())
+    dia_semana = df_data['Resultado'].iloc[0]['dia_semana']
+    dia_util = df_data['Resultado'].iloc[0]['util']
+
+    horarios = json_caminho('Json_Horarios')
+    info_horarios = json_dados(os.path.join(horarios['Diretorio'], horarios['Arquivo']))
+    lista_horarios = info_horarios["horarios"]
+    horarios_filtrados = [horario for horario in lista_horarios if horario["Dia"] == dia_semana]
+
+    processos = json_caminho('Json_Processos')
+    info_processos = json_dados(os.path.join(processos['Diretorio'], processos['Arquivo']))
+    lista_processos = info_processos["processos"]
+    processos_filtrados = [processo for processo in lista_processos
+                           if processo["Dia"] == dia_semana
+                           or processo["Dia"] == "All"
+                           or (processo["Dia"] == "Util" and dia_util)]
+    exec_info += "\tGF\n"
+
+    exec_info += "\t\tMI\n"
+    try:
+        with term.fullscreen(), term.cbreak(), term.hidden_cursor():
+            while True:
+                horario_atual = datetime.now()
+
+                # Inicia Execucao
+                desenhar_tela(term, proxima_execucao, processos_filtrados, False, False)
+                if horarios_filtrados[0]["HorarioMinimo"] <= horario_atual.strftime("%H:%M") <= horarios_filtrados[0]["HorarioMaximo"]:
+                    if processos_futuros:
+                        for processo in processos_futuros:
+                            if etl_VerificaAgendamento(processo, horario_atual):
+                                resultado = etl_ExecutaProcesso(processo)
+                                exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+                                exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+                                exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+                                desenhar_tela(term, proxima_execucao, processos_filtrados, True, False)
+                    desenhar_tela(term, proxima_execucao, processos_filtrados, False, True)
+                    varg_erro = False
+                else:
+                    print(f"Fora do horário permitido ({dia_semana} {horario_atual}). Aguardando próximo intervalo.")
+
+                # Inicia Agendamento
+                for processo in processos_filtrados:
+                    ultimo = fn_ultimo_log(processo['Classe'])
+                    if ultimo != "":
+                        horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
+                        if processo["Frequencia"] == "Diario":
+                            if ultimo is not None:
+                                if horario_atual.date() != ultimo.date() and horario_processo <= horario_atual:
+                                    horario_processo = horario_atual + timedelta(hours=int(0), minutes=int(2))
+                                    processo['Horario'] = horario_processo.strftime("%H:%M")
+                            else:
+                                if horario_processo <= horario_atual:
+                                    horario_processo = horario_atual + timedelta(hours=0, minutes=2)
+                                    processo['Horario'] = horario_processo.strftime("%H:%M")
+                        if processo["Frequencia"] == "Intervalo":
+                            if processo["Intervalo"] != "N/A":
+                                intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
+                                while horario_processo <= horario_atual:
+                                    horario_processo += intervalo
+                                processo['Horario'] = horario_processo.strftime("%H:%M")
+                processos_futuros = [horario for horario in processos_filtrados if
+                                     horario["Horario"] >= datetime.now().strftime('%H:%M')]
+                if processos_futuros:
+                    proximo_horario = min(processos_futuros, key=lambda x: x["Horario"])
+                    proxima_execucao = f"{proximo_horario['Nome']}, {proximo_horario['Horario']}"
+                else:
+                    proxima_execucao = "Nenhuma execução programada."
+                #exec_info += "\t\tMF\n"
+
+    except Exception as e:
+        exec_info += "\t\t\tM99\n"
+        exec_info += f"Traceback: {traceback.format_exc()}"
+        varg_erro = True
+        raise
+
+    finally:
+        exec_info += "LF\n"
+        log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
+        logging.shutdown()
+
+if __name__ == "__main__":
+    main()
+    print(exec_info)

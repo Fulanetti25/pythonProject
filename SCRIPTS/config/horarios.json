@@ -1,0 +1,12 @@
+{
+  "horarios": [
+    {"Dia": "Monday", "HorarioMinimo": "06:00", "HorarioMaximo": "22:00"},
+    {"Dia": "Tuesday", "HorarioMinimo": "06:00", "HorarioMaximo": "22:00"},
+    {"Dia": "Wednesday", "HorarioMinimo": "06:00", "HorarioMaximo": "22:00"},
+    {"Dia": "Thursday", "HorarioMinimo": "06:00", "HorarioMaximo": "22:00"},
+    {"Dia": "Friday", "HorarioMinimo": "06:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Saturday", "HorarioMinimo": "06:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Sunday", "HorarioMinimo": "06:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Holiday", "HorarioMinimo": "06:00", "HorarioMaximo": "15:50"}
+  ]
+}

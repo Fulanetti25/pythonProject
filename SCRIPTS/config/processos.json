@@ -1,0 +1,94 @@
+{
+  "processos": [
+    {
+      "Horario": "08:01",
+      "Frequencia": "Intervalo",
+      "Intervalo": "00:10",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Enviar Leads para o whatsapp da ADM",
+      "Processo": "leads_main",
+      "Descricao": "Processo para agilizar a informação de entrada de clientes."
+    },
+    {
+      "Horario": "07:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_Exporta",
+      "Nome": "Exportação Base Projetos",
+      "Processo": "exporta_main",
+      "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
+    },
+    {
+      "Horario": "07:05",
+      "Frequencia": "Intervalo",
+      "Intervalo": "00:10",
+      "Dia": "All",
+      "Classe": "cls_GooglePalavras",
+      "Nome": "Extração Google Palavras",
+      "Processo": "google_main",
+      "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
+    },
+    {
+      "Horario": "07:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Monday",
+      "Classe": "N/A",
+      "Nome": "Relatório Gantt de Projetos",
+      "Processo": "?",
+      "Descricao": "Relatório diario em Whatsapp para acompanhamento de projetos em andamento."
+    },
+    {
+      "Horario": "07:10",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Aniversariantes da Semana",
+      "Processo": "?",
+      "Descricao": "Reportar aniversariantes da semana."
+    },
+    {
+      "Horario": "07:20",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Monday",
+      "Classe": "N/A",
+      "Nome": "Exportação Base Extrato",
+      "Processo": "?",
+      "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
+    },
+    {
+      "Horario": "07:40",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Tuesday",
+      "Classe": "N/A",
+      "Nome": "Relatório Contas PJ",
+      "Processo": "?",
+      "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
+    },
+    {
+      "Horario": "07:50",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Util",
+      "Classe": "N/A",
+      "Nome": "Relatório Follow de Projetos",
+      "Processo": "?",
+      "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo das entregas e prazos comprometidos."
+    },
+    {
+      "Horario": "08:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Carregar Contatos para a Agenda",
+      "Processo": "?",
+      "Descricao": "Processo de carga dos contatos para Google Agenda."
+    }
+  ]
+}

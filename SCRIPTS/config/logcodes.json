@@ -1,0 +1,17 @@
+{
+  "codigos": [
+    {"Cod": "LI", "Escopo": "LOG","Descrição": "Log Iniciado"},
+    {"Cod": "GI", "Escopo": "GLOBAL","Descrição": "Globais Iniciado"},
+    {"Cod": "GF", "Escopo": "GLOBAL","Descrição": "Globais Finalizado"},
+    {"Cod": "F1", "Escopo": "FUNÇÃO","Descrição": "Definindo variáveis locais"},
+    {"Cod": "F2", "Escopo": "FUNÇÃO","Descrição": "Recebendo entrada de dados"},
+    {"Cod": "F3", "Escopo": "FUNÇÃO","Descrição": "Executando processamento"},
+    {"Cod": "F4", "Escopo": "FUNÇÃO","Descrição": "Realizando saída de dados"},
+    {"Cod": "F0", "Escopo": "FUNÇÃO","Descrição": "Processo concluído com sucesso"},
+    {"Cod": "F99", "Escopo": "FUNÇÃO","Descrição": "Erro registrado em SubRotina"},
+    {"Cod": "MI", "Escopo": "MAIN","Descrição": "Main Iniciado"},
+    {"Cod": "MF", "Escopo": "MAIN","Descrição": "Main Finalizado"},
+    {"Cod": "M99", "Escopo": "MAIN","Descrição": "Erro registrado em Main"},
+    {"Cod": "LF", "Escopo": "LOG","Descrição": "Log Finalizado"}
+  ]
+}
