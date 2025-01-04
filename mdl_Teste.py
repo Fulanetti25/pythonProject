@@ -137,14 +137,13 @@ def prc_check_all_emails(mail):
 							if content_type == "text/plain":
 								payload = part.get_payload(decode=True)
 								body = fnc_decode_payload(payload)
-								emails.append({"from": from_email, "assunto": assunto, "body": body})
+								emails.append({"from": from_email, "assunto": assunto, "body": body, "uid": e_id})
 								break
 					else:
 						payload = msg.get_payload(decode=True)
 						body = fnc_decode_payload(payload)
-						emails.append({"from": from_email, "assunto": assunto, "body": body})
+						emails.append({"from": from_email, "assunto": assunto, "body": body, "uid": e_id})
 		log_info = "F0"
-
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
@@ -177,7 +176,7 @@ def prc_process_email(msg_data):
 		body = fnc_remove_html_tags(body)
 
 		email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", body)
-		telefone_match = re.search(r"\+?\d{1,3}\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}", body)
+		telefone_match = re.search(r"\+?\d{1,3}\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}|\d{2}\s?\d{4,5}-?\d{4}", body)
 
 		mensagem = body
 		if email_match:
@@ -241,6 +240,67 @@ def prc_reply_mail(processed_email):
 	return resultado_envio
 
 
+def prc_move_email(mail, email_uid, target_folder):
+	log_info = "F1"
+	varl_detail = None
+	try:
+		log_info = "F2"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"Verificado UID: {email_uid}",
+					 var_erro=False)
+
+		# Ajuste do nome da pasta de destino
+		if not target_folder.startswith("INBOX."):
+			target_folder = "INBOX." + target_folder
+
+		# Realiza o comando COPY para mover o e-mail para a pasta AUTOMACAO
+		status, messages = mail.copy(email_uid, target_folder)
+		if status != 'OK':
+			varl_detail = f"Erro ao mover o e-mail UID {email_uid} para {target_folder}, Status: {status}, Mensagem: {messages}"
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+			log_info = "F99"
+			return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
+
+		# Marca o e-mail como excluído na pasta INBOX
+		status, messages = mail.store(email_uid, '+FLAGS', '\\Deleted')
+		if status != 'OK':
+			varl_detail = f"Erro ao marcar e-mail UID {email_uid} como excluído na INBOX, Status: {status}, Mensagem: {messages}"
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+			log_info = "F99"
+			return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
+
+		# Comando EXPUNGE para excluir definitivamente o e-mail da pasta INBOX
+		mail.expunge()
+
+		# Verifica se o e-mail foi movido para a pasta de destino
+		status, _ = mail.select(target_folder)
+		if status != 'OK':
+			varl_detail = f"Não foi possível acessar a pasta {target_folder} para verificar o e-mail."
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+			log_info = "F99"
+			return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
+
+		# Verificação adicional do UID: busca pela UID na pasta de destino
+		status, messages = mail.search(None, f"UID {email_uid.decode()}")  # Decodifica o UID de bytes
+		if status != 'OK' or not messages:
+			varl_detail = f"E-mail UID {email_uid.decode()} não encontrado na pasta {target_folder}."
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+			log_info = "F99"
+			return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
+
+		log_info = "F0"
+		log_registra(__name__, inspect.currentframe().f_code.co_name,
+					 var_detalhe=f"E-mail {email_uid.decode()} movido para a pasta {target_folder} e excluído da INBOX",
+					 var_erro=False)
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
+
+	return {"Resultado": "Sucesso", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 	mail = prc_connect_email()
@@ -259,7 +319,7 @@ def main():
 		if emails_data:
 			for email_data in emails_data:
 				processed_email = prc_process_email(email_data)
-				if processed_email["email"] != "Não identificado":
+				if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
 					caminho = json_caminho('Contato_VCard')
 					file_dir = caminho['Diretorio']
 					file_name = os.path.join(file_dir, processed_email["nome"] + '.vcf')
@@ -267,19 +327,29 @@ def main():
 				else:
 					file_name = None
 				if processed_email["mensagem"] != "Não identificado":
-
 					if processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] != "Não identificado":
 						resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
+						# gravar linha no excel
+						# gravar linha no Db
 						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+						prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
 
 					elif processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] == "Não identificado":
 						resultado = prc_reply_mail(processed_email)
+						# gravar linha no excel
+						# gravar linha no Db
 						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+						log_info = f"Preparando para mover o e-mail: {email_data['uid']}"
+						log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=log_info, var_erro=False)
+						prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
+
 					elif processed_email["assunto"] == "Extrato da sua conta PJ":
+						# gravar anexo
+						# prc_move_email(mail['Resultado'], email_data['uid'], 'EXTRATOS')
 						pass
 
 					else:

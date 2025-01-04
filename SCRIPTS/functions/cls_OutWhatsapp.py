@@ -167,8 +167,8 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado = enviar_whatsapp_texto(numero, mensagem)
-		#resultado = enviar_whatsapp_anexo(numero, mensagem, r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\contatos\202412 CLI TEIXEIRA.vcf')
+		#resultado = enviar_whatsapp_texto(numero, mensagem)
+		resultado = enviar_whatsapp_anexo(numero, mensagem, r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\contatos\202412 CLI TEIXEIRA.vcf')
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
