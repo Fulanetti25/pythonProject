@@ -1,11 +1,9 @@
 import re
 
 def testar_regex(body):
-    # Expressões regulares
     email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-    telefone_pattern = r"\+?\d{1,3}\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}|\d{2}\s?\d{4,5}-?\d{4}"
+    telefone_pattern = r"(\+?\d{1,3}[ \-]?)?(\(?\d{2}\)?[ \-]?)?(9\d{4}\-?\d{4}|\d{4}\-?\d{4})"
 
-    # Teste para o e-mail
     email_match = re.search(email_pattern, body)
     if email_match:
         print(f"E-mail encontrado: {email_match.group()}")
@@ -20,5 +18,9 @@ def testar_regex(body):
         print("Nenhum telefone encontrado.")
 
 # Testando a entrada
-body = "E-mail: Leferreira373@gmail.com Telefone: 16 992127140"
+body = """
+Necessidade do Cliente: Desenvolvimento de planilha para orçamento de servicos e produtos. 
+Contato: (85) 98428-3082 
+E-mail: marcos.serpa@mpenergy.com.br 
+"""
 testar_regex(body)

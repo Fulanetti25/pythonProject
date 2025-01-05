@@ -9,6 +9,7 @@ import inspect
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email import message_from_bytes, policy
 from bs4 import BeautifulSoup
 from email.header import decode_header
 from datetime import datetime
@@ -129,7 +130,11 @@ def prc_check_all_emails(mail):
 					msg = email.message_from_bytes(response[1])
 					assunto, encoding = decode_header(msg["Subject"])[0]
 					if isinstance(assunto, bytes):
-						assunto = assunto.decode(encoding if encoding else "utf-8")
+						encoding = encoding or "utf-8"
+						assunto = assunto.decode(encoding)
+					else:
+						# Garante que seja str
+						assunto = assunto or "Assunto não definido"
 					from_email = msg.get("From")
 					if msg.is_multipart():
 						for part in msg.walk():
@@ -144,11 +149,12 @@ def prc_check_all_emails(mail):
 						body = fnc_decode_payload(payload)
 						emails.append({"from": from_email, "assunto": assunto, "body": body, "uid": e_id})
 		log_info = "F0"
+
 	except Exception as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail,
+					 var_erro=True)
 		log_info = "F99"
-		return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
 		raise
 
 	return {"Resultado": emails, 'Status_log': log_info, 'Detail_log': varl_detail}
@@ -165,6 +171,7 @@ def prc_process_email(msg_data):
 	try:
 		log_info = "F3"
 		assunto = msg_data['assunto']
+		print(assunto)
 
 		if msg_data.get("from"):
 			sender = msg_data["from"]
@@ -175,8 +182,10 @@ def prc_process_email(msg_data):
 		body = msg_data["body"]["Resultado"]
 		body = fnc_remove_html_tags(body)
 
-		email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", body)
-		telefone_match = re.search(r"\+?\d{1,3}\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}|\d{2}\s?\d{4,5}-?\d{4}", body)
+		email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+		telefone_pattern = r"(\+?\d{1,3}[ \-]?)?(\(?\d{2}\)?[ \-]?)?(9\d{4}\-?\d{4}|\d{4}\-?\d{4})"
+		email_match = re.search(email_pattern, body)
+		telefone_match = re.search(telefone_pattern, body)
 
 		mensagem = body
 		if email_match:
@@ -229,15 +238,35 @@ def prc_reply_dados(destinatario, assunto, corpo_email):
 
 
 def prc_reply_mail(processed_email):
-	mail = json_caminho('Mail_ContatoInvalido')
-	mensagem_json = json_dados(os.path.join(mail['Diretorio'], mail['Arquivo']))
-	mensagem_padrao = mensagem_json.get("mensagem_padrao", "Mensagem padrão não encontrada.")
+	try:
+		mail = json_caminho('Mail_ContatoInvalido')
+		mensagem_json = json_dados(os.path.join(mail['Diretorio'], mail['Arquivo']))
+		mensagem_padrao = mensagem_json.get("mensagem_padrao", "Mensagem padrão não encontrada.")
 
-	corpo_email = mensagem_padrao.format(nome=processed_email["nome"], mensagem=processed_email["mensagem"], email=processed_email["email"])
+		corpo_email = mensagem_padrao.format(nome=processed_email["nome"],
+											 mensagem=processed_email["mensagem"],
+											 email=processed_email["email"])
 
-	resultado_envio = prc_reply_dados(processed_email["email"], "Planilha sob Medida - Requisição de contato", corpo_email)
+		# Exibir mensagem para o usuário e solicitar confirmação
+		print("\nPrévia do E-mail:")
+		print(f"Para: {processed_email['email']}")
+		print(f"Assunto: Planilha sob Medida - Requisição de contato")
+		print("Mensagem:")
+		print(corpo_email)
+		confirmacao = input("\nDeseja enviar este e-mail? (s/n): ").strip().lower()
 
-	return resultado_envio
+		if confirmacao != 's':
+			return {"Resultado": "Envio cancelado pelo usuário.", 'Status_log': "F1", 'Detail_log': "Envio cancelado."}
+
+		resultado_envio = prc_reply_dados(processed_email["email"],
+										  "Planilha sob Medida - Requisição de contato",
+										  corpo_email)
+		return resultado_envio
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa de confirmação ou envio do e-mail, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		return {"Resultado": "Erro ao processar o envio do e-mail.", 'Status_log': "F99", 'Detail_log': varl_detail}
 
 
 def prc_move_email(mail, email_uid, target_folder):
@@ -301,6 +330,48 @@ def prc_move_email(mail, email_uid, target_folder):
 	return {"Resultado": "Sucesso", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def prc_salvar_anexos(email, uid, diretorio_destino):
+	try:
+		# Criação do diretório caso não exista
+		if not os.path.exists(diretorio_destino):
+			os.makedirs(diretorio_destino)
+
+		msg = message_from_bytes(email['Resultado'], policy=policy.default)
+		arquivos_salvos = []
+
+		# Iteração sobre os anexos da mensagem
+		for part in msg.iter_attachments():
+			if part.get_content_disposition() == "attachment":
+				file_name = part.get_filename()
+				if file_name:
+					file_path = os.path.join(diretorio_destino, file_name)
+					arquivos_salvos.append(file_path)
+
+		# Exibição dos anexos encontrados
+		print("\nArquivos encontrados:")
+		for idx, file in enumerate(arquivos_salvos, 1):
+			print(f"{idx}: {os.path.basename(file)}")
+
+		# Confirmação do salvamento
+		salvar = input("\nDeseja salvar os arquivos listados? (s/n): ").strip().lower()
+		if salvar != "s":
+			print("Salvamento cancelado pelo usuário.")
+			return False
+
+		# Salvar os arquivos confirmados
+		for file_path in arquivos_salvos:
+			with open(file_path, 'wb') as file:
+				part = next(p for p in msg.iter_attachments() if os.path.join(diretorio_destino, p.get_filename()) == file_path)
+				file.write(part.get_payload(decode=True))
+
+		print("Arquivos salvos com sucesso.")
+		return True
+
+	except Exception as e:
+		print(f"Erro ao salvar anexos: {e}")
+		return False
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 	mail = prc_connect_email()
@@ -317,44 +388,51 @@ def main():
 	try:
 		emails_data = prc_check_all_emails(mail['Resultado'])["Resultado"]
 		if emails_data:
-			for email_data in emails_data:
-				processed_email = prc_process_email(email_data)
-				if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
-					caminho = json_caminho('Contato_VCard')
-					file_dir = caminho['Diretorio']
-					file_name = os.path.join(file_dir, processed_email["nome"] + '.vcf')
-					fnc_gerar_vcard(processed_email["nome"],processed_email["email"],processed_email["telefone"],processed_email["mensagem"], file_name)
-				else:
-					file_name = None
-				if processed_email["mensagem"] != "Não identificado":
-					if processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] != "Não identificado":
-						resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
-						# gravar linha no excel
-						# gravar linha no Db
-						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-						prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
-
-					elif processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] == "Não identificado":
-						resultado = prc_reply_mail(processed_email)
-						# gravar linha no excel
-						# gravar linha no Db
-						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-						log_info = f"Preparando para mover o e-mail: {email_data['uid']}"
-						log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=log_info, var_erro=False)
-						prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
-
-					elif processed_email["assunto"] == "Extrato da sua conta PJ":
-						# gravar anexo
-						# prc_move_email(mail['Resultado'], email_data['uid'], 'EXTRATOS')
-						pass
-
-					else:
-						pass
-
+			print(emails_data)
+			# for email_data in emails_data:
+			# 	print('Mail 3')
+			# 	processed_email = prc_process_email(email_data)
+			# 	print(processed_email["assunto"])
+			# 	if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
+			# 		caminho = json_caminho('Contato_VCard')
+			# 		file_dir = caminho['Diretorio']
+			# 		file_name = os.path.join(file_dir, processed_email["nome"] + '.vcf')
+			# 		fnc_gerar_vcard(processed_email["nome"],processed_email["email"],processed_email["telefone"],processed_email["mensagem"], file_name)
+			# 	else:
+			# 		file_name = None
+			# 	if processed_email["mensagem"] != "Não identificado":
+			# 		if processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] != "Não identificado":
+			# 			resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
+			# 			# gravar linha no excel
+			# 			# gravar linha no Db
+			# 			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+			# 			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+			# 			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+			# 			prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
+			#
+			# 		elif processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] == "Não identificado":
+			# 			resultado = prc_reply_mail(processed_email)
+			# 			# gravar linha no excel
+			# 			# gravar linha no Db
+			# 			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+			# 			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+			# 			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+			# 			log_info = f"Preparando para mover o e-mail: {email_data['uid']}"
+			# 			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=log_info, var_erro=False)
+			# 			prc_move_email(mail['Resultado'], email_data['uid'], 'AUTOMACAO')
+			#
+			#
+			# 		elif processed_email["assunto"] == "Extrato da sua conta PJ":
+			# 			caminho = json_caminho('Extrato_PJ')
+			# 			file_dir = caminho['Diretorio']
+			# 			sucesso = salvar_anexos(mail, email_data['uid'], file_dir)
+			# 			if sucesso:
+			# 				prc_move_email(mail['Resultado'], email_data['uid'], 'EXTRATOS')
+			#
+			# 		else:
+			# 			pass
+		else:
+			print('não achou mails data')
 		exec_info += "\t\tMF\n"
 		varg_erro = False
 

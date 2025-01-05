@@ -7,6 +7,7 @@
       {"Nome": "Base_Pesquisas_Google","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "pesquisas_google.csv"},
       {"Nome": "Batch_Pesquisas_Google","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Processos\\","Arquivo": "PSM VerificaSite.cmd"},
       {"Nome": "Contato_VCard","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\Contatos\\","Arquivo": ""},
+      {"Nome": "Extrato_PJ","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\extratos_nu\\","Arquivo": ""},
       {"Nome": "Chrome_Profile","Diretorio": "C:\\Users\\Paulo\\AppData\\Local\\Google\\Chrome\\User Data\\","Arquivo": "Profile 1"},
       {"Nome": "Json_Caminhos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "caminhos.json"},
       {"Nome": "Json_Processos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "processos.json"},
