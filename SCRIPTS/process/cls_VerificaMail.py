@@ -176,8 +176,10 @@ def prc_process_email(msg_data):
 		body = msg_data["body"]["Resultado"]
 		body = fnc_remove_html_tags(body)
 
-		email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", body)
-		telefone_match = re.search(r"\+?\d{1,3}\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}", body)
+		email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+		telefone_pattern = r"(\+?\d{1,3}[ \-]?)?(\(?\d{2}\)?[ \-]?)?(9\d{4}\-?\d{4}|\d{4}\-?\d{4})"
+		email_match = re.search(email_pattern, body)
+		telefone_match = re.search(telefone_pattern, body)
 
 		mensagem = body
 		if email_match:
@@ -274,11 +276,6 @@ def main():
 						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
-					elif processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] == "Não identificado":
-						resultado = prc_reply_mail(processed_email)
-						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-						exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 					elif processed_email["assunto"] == "Extrato da sua conta PJ":
 						pass
 

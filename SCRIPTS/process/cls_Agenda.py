@@ -12,6 +12,7 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.process.cls_Exporta import main as exporta_main
 from SCRIPTS.process.cls_GooglePalavras import main as google_main
 from SCRIPTS.process.cls_VerificaMail import main as leads_main
+from SCRIPTS.process.cls_GanttProjetos import main as gantt_main
 
 def etl_VerificaAgendamento(processo, horario_atual):
     return processo['Horario'] == horario_atual.strftime("%H:%M")
@@ -99,26 +100,30 @@ def main():
                     varg_erro = False
                 else:
                     print(f"Fora do horário permitido ({dia_semana} {horario_atual}). Aguardando próximo intervalo.")
+                    if horario_atual.strftime("%H:%M") >= horarios_filtrados[0]["HorarioMaximo"]:
+                        break
 
                 # Inicia Agendamento
                 for processo in processos_filtrados:
                     ultimo = fn_ultimo_log(processo['Classe'])
-                    if ultimo != "":
-                        horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
-                        if processo["Frequencia"] == "Diario":
-                            if ultimo is not None:
-                                if horario_atual.date() != ultimo.date() and horario_processo <= horario_atual:
-                                    horario_processo = horario_atual + timedelta(hours=int(0), minutes=int(2))
+                    horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
+                    if processo['Classe'] != "N/A":
+                        if ultimo != "":
+                            if processo["Frequencia"] == "Diario": #incluir regra do predecessor
+                                if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
+                                    while horario_processo <= horario_atual:
+                                        horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
                                     processo['Horario'] = horario_processo.strftime("%H:%M")
-                            else:
-                                if horario_processo <= horario_atual:
-                                    horario_processo = horario_atual + timedelta(hours=0, minutes=2)
+                            if processo["Frequencia"] == "Intervalo":
+                                if processo["Intervalo"] != "N/A":
+                                    intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
+                                    while horario_processo <= horario_atual:
+                                        horario_processo += intervalo
                                     processo['Horario'] = horario_processo.strftime("%H:%M")
-                        if processo["Frequencia"] == "Intervalo":
-                            if processo["Intervalo"] != "N/A":
-                                intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
-                                while horario_processo <= horario_atual:
-                                    horario_processo += intervalo
+                        else:
+                            if processo["Frequencia"] == "Diario":
+                                while horario_processo < horario_atual:
+                                    horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
                 processos_futuros = [horario for horario in processos_filtrados if
                                      horario["Horario"] >= datetime.now().strftime('%H:%M')]
@@ -143,3 +148,4 @@ def main():
 if __name__ == "__main__":
     main()
     print(exec_info)
+    print(f"Horario de Execução Diario Encerrado!")

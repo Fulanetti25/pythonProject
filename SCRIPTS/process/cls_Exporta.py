@@ -47,6 +47,8 @@ def etl_ExportaProjetos():
 	finally:
 		if varl_aberto == True:
 			workbook.Close(SaveChanges=False)
+		excel.Quit()
+		del excel
 
 	return {"Resultado": str(df.shape), 'Status_log': log_info, 'Detail_log': varl_detail}
 

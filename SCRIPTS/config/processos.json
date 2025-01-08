@@ -8,6 +8,7 @@
       "Classe": "N/A",
       "Nome": "Enviar Leads para o whatsapp da ADM",
       "Processo": "leads_main",
+      "Predecessor": "N/A",
       "Descricao": "Processo para agilizar a informação de entrada de clientes."
     },
     {
@@ -18,6 +19,7 @@
       "Classe": "cls_Exporta",
       "Nome": "Exportação Base Projetos",
       "Processo": "exporta_main",
+      "Predecessor": "N/A",
       "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
     {
@@ -28,16 +30,18 @@
       "Classe": "cls_GooglePalavras",
       "Nome": "Extração Google Palavras",
       "Processo": "google_main",
+      "Predecessor": "N/A",
       "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
     },
     {
       "Horario": "07:30",
-      "Frequencia": "Semanal",
+      "Frequencia": "Diario",
       "Intervalo": "N/A",
-      "Dia": "Monday",
-      "Classe": "N/A",
+      "Dia": "All",
+      "Classe": "cls_GanttProjetos",
       "Nome": "Relatório Gantt de Projetos",
-      "Processo": "?",
+      "Processo": "gantt_main",
+      "Predecessor": "cls_Exporta",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de projetos em andamento."
     },
     {
@@ -48,6 +52,7 @@
       "Classe": "N/A",
       "Nome": "Aniversariantes da Semana",
       "Processo": "?",
+      "Predecessor": "N/A",
       "Descricao": "Reportar aniversariantes da semana."
     },
     {
@@ -58,6 +63,7 @@
       "Classe": "N/A",
       "Nome": "Exportação Base Extrato",
       "Processo": "?",
+      "Predecessor": "N/A",
       "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
     {
@@ -68,6 +74,7 @@
       "Classe": "N/A",
       "Nome": "Relatório Contas PJ",
       "Processo": "?",
+      "Predecessor": "N/A",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
     },
     {
@@ -78,6 +85,7 @@
       "Classe": "N/A",
       "Nome": "Relatório Follow de Projetos",
       "Processo": "?",
+      "Predecessor": "N/A",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo das entregas e prazos comprometidos."
     },
     {
@@ -88,7 +96,19 @@
       "Classe": "N/A",
       "Nome": "Carregar Contatos para a Agenda",
       "Processo": "?",
+      "Predecessor": "N/A",
       "Descricao": "Processo de carga dos contatos para Google Agenda."
+    },
+    {
+      "Horario": "08:00",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "NFS-e Emitidas",
+      "Processo": "?",
+      "Predecessor": "N/A",
+      "Descricao": "Acompanhamento das notas emitidas dentro do limite de um MEI"
     }
   ]
 }
