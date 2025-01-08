@@ -146,7 +146,36 @@ def tela_inferior_esq(term):
 
 
 def tela_inferior_dir(term):
-    exibir_texto(term, COLUNA_DIR, LINHA_KPI, "KPIs Operacionais:", estilo=term.underline + term.bold_red)
+    # Configuração do cabeçalho dos KPIs
+    col_base = COLUNA_DIR
+    linha_base = LINHA_KPI
+    meses = ["ATUAL", "DEZ_24", "NOV_24", "OUT_24", "SET_24"]  # Substituir pelos meses relevantes
+
+    # Título da seção
+    exibir_texto(term, col_base, linha_base, "KPIs Operacionais:", estilo=term.underline + term.bold_red)
+
+    # Cabeçalho das colunas
+    linha_base += 1
+    for i, mes in enumerate(meses):
+        exibir_texto(term, col_base + i * 15, linha_base, mes, estilo=term.bold_white)
+
+    # Definição dos KPIs e seus valores
+    kpis = [
+        {"nome": "Conta PF Saldo", "valores": [15000, 14500, 14000, 13000, 12500]},
+        {"nome": "Conta PJ Saldo", "valores": [75000, 74000, 73000, 72000, 71000]},
+        {"nome": "Valor Comprometido", "valores": [20000, 19500, 19000, 18000, 17500]},
+        {"nome": "Ticket Médio", "valores": [500, 510, 520, 530, 540]},
+        {"nome": "Projetos", "valores": [10, 9, 8, 7, 6]},
+        {"nome": "% Sucesso Comercial", "valores": [95, 93, 90, 88, 85]},
+        {"nome": "% Sucesso Desenvolvimento", "valores": [90, 89, 88, 87, 85]},
+    ]
+
+    # Exibição dos KPIs
+    for kpi_idx, kpi in enumerate(kpis):
+        linha_base += 1
+        exibir_texto(term, col_base, linha_base, kpi["nome"], estilo=term.bold_cyan)
+        for i, valor in enumerate(kpi["valores"]):
+            exibir_texto(term, col_base + i * 15, linha_base, str(valor), estilo=term.bold_white)
 
 
 def desenhar_tela(term, proxima_execucao, processos_filtrados, fake=False, tempo=True):
