@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import message_from_bytes, policy
 from bs4 import BeautifulSoup
+from imapclient import imap_utf7
 from email.header import decode_header
 from datetime import datetime
 from decouple import config
@@ -49,51 +50,6 @@ def prc_connect_email():
 		raise
 
 	return {"Resultado": mail, 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
-def get_email_uid_by_assunto(assunto):
-	try:
-		# Conectar ao servidor IMAP (ajuste conforme o seu servidor)
-		mail = imaplib.IMAP4_SSL("imap.seuservidor.com")
-		mail.login("seu_email@example.com", "sua_senha")
-
-		# Selecionar a caixa de entrada
-		mail.select("inbox")
-
-		# Buscar e-mails com o assunto especificado
-		status, messages = mail.search(None, f'BODY "{assunto}"')
-
-		if status != "OK":
-			raise Exception(f"Erro ao buscar e-mails com o assunto {assunto}")
-
-		# Verificar se algum e-mail foi encontrado
-		email_ids = messages[0].split()
-		if not email_ids:
-			return None
-
-		# Pegar o primeiro e-mail encontrado
-		email_id = email_ids[0]
-
-		# Obter o UID do e-mail
-		status, email_data = mail.fetch(email_id, "(BODY[HEADER.FIELDS (UID)])")
-		if status != "OK":
-			raise Exception(f"Erro ao obter UID para o e-mail com assunto {assunto}")
-
-		# Extração do UID
-		uid = None
-		for response_part in email_data:
-			if isinstance(response_part, tuple):
-				# Buscar o UID no corpo da resposta
-				if "UID" in str(response_part):
-					uid = str(response_part).split('UID ')[1].split()[0]
-
-		return uid
-
-	except Exception as e:
-		print(f"Erro ao buscar UID do e-mail: {e}")
-		return None
-	finally:
-		mail.logout()
 
 
 def prc_check_all_emails(mail):
@@ -157,7 +113,6 @@ def prc_check_all_emails(mail):
 						"from": from_email,
 						"assunto": assunto,
 						"body": body or "Corpo vazio",
-						"uid": e_id.decode("utf-8")
 					})
 
 		log_info = "F0"
@@ -258,7 +213,6 @@ def prc_process_email(msg_data):
 	email_match = None
 	telefone_match = None
 	mensagem = None
-	uid = None
 	email_result = None  # Variável para armazenar o resultado final do e-mail
 
 	try:
@@ -275,8 +229,6 @@ def prc_process_email(msg_data):
 			nome = sender.split("<")[0].strip() if "<" in sender else sender.strip()
 			nome = nome.replace('"', '')
 			nome = datetime.now().strftime("%Y%m%d") + " CLI " + nome
-
-		uid = msg_data.get('uid', 'UID não identificado')
 
 		# Processar o corpo do e-mail
 		body = msg_data.get("body", {}).get("Resultado", "")
@@ -320,7 +272,6 @@ def prc_process_email(msg_data):
 		raise
 
 	return {
-		"uid": uid,
 		"assunto": assunto,
 		"nome": nome,
 		"email": email_result if email_result else "Não identificado",  # Retorna o email com "SPAM," se necessário
@@ -391,63 +342,6 @@ def prc_reply_mail(processed_email):
 		return {"Resultado": "Erro ao processar o envio do e-mail.", 'Status_log': "F99", 'Detail_log': varl_detail}
 
 
-def prc_move_email(assunto, target_folder):
-	log_info = "F1"
-	varl_detail = None
-	try:
-		# Ajuste do nome da pasta de destino
-		if not target_folder.startswith("INBOX."):
-			target_folder = "INBOX." + target_folder
-
-		print(f"Tentando mover para a pasta: {target_folder}")
-
-		# Obter o UID ou número de sequência do e-mail usando o assunto
-		email_uid = get_email_uid_by_assunto(assunto)
-		if not email_uid:
-			raise Exception(f"UID do e-mail não encontrado para o assunto {assunto}")
-
-		print(f"UID encontrado: {email_uid}")
-
-		# Conectar ao servidor IMAP e mover o e-mail
-		mail = imaplib.IMAP4_SSL("imap.seuservidor.com")
-		mail.login("seu_email@example.com", "sua_senha")
-		mail.select("inbox")
-
-		# Realiza o comando COPY para copiar o e-mail para a pasta de destino
-		print(f"Executando comando COPY para UID {email_uid} na pasta {target_folder}")
-		status, messages = mail.copy(email_uid, target_folder)
-		print(f"Resposta do comando COPY: Status = {status}, Mensagens = {messages}")
-		if status != 'OK':
-			varl_detail = f"Erro ao copiar o e-mail UID {email_uid} para {target_folder}, Status: {status}, Mensagem: {messages}"
-			raise Exception(varl_detail)  # Gera um erro se falhar
-
-		# Marca o e-mail como excluído na pasta INBOX
-		print(f"Executando comando STORE para marcar o e-mail UID {email_uid} como excluído")
-		status, messages = mail.store(email_uid, '+FLAGS', '\\Deleted')
-		print(f"Resposta do comando STORE: Status = {status}, Mensagens = {messages}")
-		if status != 'OK':
-			varl_detail = f"Erro ao marcar e-mail UID {email_uid} como excluído na INBOX, Status: {status}, Mensagem: {messages}"
-			raise Exception(varl_detail)  # Gera um erro se falhar
-
-		# Comando EXPUNGE para excluir definitivamente o e-mail da pasta INBOX
-		print("Executando comando EXPUNGE para remover e-mails marcados")
-		mail.expunge()
-		print("Comando EXPUNGE executado com sucesso.")
-
-		log_info = "F0"  # Sucesso após copiar e excluir
-
-	except Exception as e:
-		varl_detail = f"{log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "F99"  # Erro final
-		return {"Resultado": [], 'Status_log': log_info, 'Detail_log': varl_detail}
-
-	finally:
-		mail.logout()
-
-	return {"Resultado": "Sucesso", 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
 def prc_salvar_anexos(email, uid, diretorio_destino):
 	try:
 		# Criação do diretório caso não exista
@@ -490,9 +384,71 @@ def prc_salvar_anexos(email, uid, diretorio_destino):
 		return False
 
 
+def prc_move_email(mail, assunto, target_folder):
+	log_info = "M1"
+	varl_detail = None
+
+	try:
+		# Garantir que a pasta de destino comece com "INBOX."
+		if not target_folder.startswith("INBOX."):
+			target_folder = "INBOX." + target_folder
+
+		print(f"Tentando mover e-mails com o assunto '{assunto}' para a pasta '{target_folder}'")
+
+		# Seleciona a pasta INBOX para buscar os e-mails
+		mail.select("inbox")
+		log_info = "M2"
+
+		# Usar os 20 primeiros caracteres do assunto
+		assunto_curto = assunto[:20]
+		print(f"Filtrando por assunto curto: '{assunto_curto}'")
+
+		# Pesquisa os e-mails pelo assunto curto
+		query = f'SUBJECT "{assunto_curto}"'
+		print(f"Query de busca: {query}")
+		status, messages = mail.search(None, query)
+		print(f"Status da busca: {status}, Mensagens encontradas: {messages}")
+
+		if status != "OK" or not messages[0]:
+			raise Exception(f"E-mail com o assunto parcial '{assunto_curto}' não encontrado.")
+
+		# Processar os e-mails encontrados
+		email_ids = messages[0].split()
+		for email_id in email_ids:
+			print(f"Processando e-mail ID: {email_id.decode('utf-8')}")
+
+			# Copia o e-mail para a pasta de destino
+			log_info = "M3"
+			status, _ = mail.copy(email_id, target_folder)
+			if status != "OK":
+				raise Exception(f"Erro ao copiar o e-mail ID {email_id} para '{target_folder}'.")
+
+			# Marca o e-mail como excluído na INBOX
+			log_info = "M4"
+			status, _ = mail.store(email_id, '+FLAGS', '\\Deleted')
+			if status != "OK":
+				raise Exception(f"Erro ao marcar o e-mail ID {email_id} como excluído.")
+
+		# Expunge para remover os e-mails marcados como excluídos
+		log_info = "M5"
+		mail.expunge()
+		log_info = "M0"
+
+		print(f"E-mails com o assunto parcial '{assunto_curto}' movidos com sucesso para '{target_folder}'.")
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "M99"
+		raise
+	finally:
+		print(f"Finalizado o processamento do assunto '{assunto}'. Última etapa: {log_info}")
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
-	mail = prc_connect_email()
+	connection_result = prc_connect_email()
+	mail = connection_result['Resultado']
 
 	global exec_info
 	exec_info = "\nLI\n"
@@ -504,13 +460,13 @@ def main():
 	exec_info += "\t\tMI\n"
 
 	try:
-		emails_data = prc_check_all_emails(mail['Resultado'])["Resultado"]
+		emails_data = prc_check_all_emails(connection_result['Resultado'])["Resultado"]
 		if emails_data:
 			for email_data in emails_data:
 				print(email_data['assunto'])
 				if "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
 					processed_email = prc_process_email(email_data)
-					print("UID: ", processed_email['uid'], "TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
+					print("TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
 					if processed_email["email"].startswith('SPAM,'):
 						print('+1 mail SPAM')
 					else:
@@ -527,10 +483,10 @@ def main():
 							file_name = None
 						if processed_email["telefone"] != "Não identificado":
 							pass
-							# resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
-							# exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-							# exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+							resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
+							exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+							exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+							exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 						elif processed_email["telefone"] == "Não identificado":
 							pass
 							# resultado = prc_reply_mail(processed_email)
@@ -544,14 +500,13 @@ def main():
 					# file_dir = caminho['Diretorio']
 					# sucesso = salvar_anexos(mail, email_data['uid'], file_dir)
 					# if sucesso:
-					# 	prc_move_email(mail['Resultado'], email_data['uid'], 'EXTRATOS')
 
 				elif email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
 					print('+1 mail ENC/RES')
 
 				else:
 					print('+1 excluido')
-					prc_move_email(email_data['assunto'], 'AUTO_DELETE')
+					prc_move_email(mail, email_data['assunto'], 'AUTO_DELETE')
 				# gravar linha no excel
 				# gravar linha no Db
 		else:
@@ -567,6 +522,7 @@ def main():
 
 	finally:
 		exec_info += "LF\n"
+		mail.logout()
 		log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
 		logging.shutdown()
 

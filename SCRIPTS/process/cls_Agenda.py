@@ -99,7 +99,7 @@ def main():
                     desenhar_tela(term, proxima_execucao, processos_filtrados, False, True)
                     varg_erro = False
                 else:
-                    print(f"Fora do horário permitido ({dia_semana}). \nAguardando próximo intervalo.")
+                    print(f"Fora do horário permitido ({dia_semana}, das {horarios_filtrados[0]["HorarioMinimo"]} as {horarios_filtrados[0]["HorarioMaximo"]}. \nAguardando próximo intervalo.")
                     if horario_atual.strftime("%H:%M") >= horarios_filtrados[0]["HorarioMaximo"]:
                         break
 
