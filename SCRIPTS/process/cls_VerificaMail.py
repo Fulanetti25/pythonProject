@@ -180,6 +180,8 @@ def prc_process_email(msg_data):
 		telefone_pattern = r"(\+?\d{1,3}[ \-]?)?(\(?\d{2}\)?[ \-]?)?(9\d{4}\-?\d{4}|\d{4}\-?\d{4})"
 		email_match = re.search(email_pattern, body)
 		telefone_match = re.search(telefone_pattern, body)
+		print(telefone_pattern)
+		print(telefone_match)
 
 		mensagem = body
 		if email_match:
@@ -261,6 +263,7 @@ def main():
 		if emails_data:
 			for email_data in emails_data:
 				processed_email = prc_process_email(email_data)
+				print(processed_email)
 				if processed_email["email"] != "Não identificado":
 					caminho = json_caminho('Contato_VCard')
 					file_dir = caminho['Diretorio']
@@ -271,6 +274,7 @@ def main():
 				if processed_email["mensagem"] != "Não identificado":
 
 					if processed_email["assunto"] == "Solicitacao de orcamento" and processed_email["telefone"] != "Não identificado":
+						print('entrou')
 						resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
 						exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 						exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"

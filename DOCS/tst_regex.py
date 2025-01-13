@@ -19,8 +19,8 @@ def testar_regex(body):
 
 # Testando a entrada
 body = """
-Necessidade do Cliente: Desenvolvimento de planilha para orçamento de servicos e produtos. 
-Contato: (85) 98428-3082 
-E-mail: marcos.serpa@mpenergy.com.br 
+Necessidade do Cliente: Desenvolver planilha para controle de saídas e devolução de livros da biblioteca, com os seguintes tópicos para pesquisa: Nome da obra, autor, cliente, CPF, endereço, telefone/whats/email, data retirada, prazo devolução, devolvido. Obrigada 
+Contato: +5551992470473 
+E-mail: paimclelia12@gmail.com 
 """
 testar_regex(body)

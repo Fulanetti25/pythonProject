@@ -51,7 +51,7 @@
       "Dia": "All",
       "Classe": "N/A",
       "Nome": "Aniversariantes da Semana",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Reportar aniversariantes da semana."
     },
@@ -62,7 +62,7 @@
       "Dia": "Monday",
       "Classe": "N/A",
       "Nome": "Exportação Base Extrato",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
@@ -73,7 +73,7 @@
       "Dia": "Tuesday",
       "Classe": "N/A",
       "Nome": "Relatório Contas PJ",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
     },
@@ -84,7 +84,7 @@
       "Dia": "Util",
       "Classe": "N/A",
       "Nome": "Relatório Follow de Projetos",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo das entregas e prazos comprometidos."
     },
@@ -95,7 +95,7 @@
       "Dia": "All",
       "Classe": "N/A",
       "Nome": "Carregar Contatos para a Agenda",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Processo de carga dos contatos para Google Agenda."
     },
@@ -106,7 +106,7 @@
       "Dia": "All",
       "Classe": "N/A",
       "Nome": "NFS-e Emitidas",
-      "Processo": "?",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Acompanhamento das notas emitidas dentro do limite de um MEI"
     }

@@ -12,6 +12,7 @@
       {"Nome": "Json_Caminhos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "caminhos.json"},
       {"Nome": "Json_Processos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "processos.json"},
       {"Nome": "Json_Horarios","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "horarios.json"},
+      {"Nome": "Json_MailSpam","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mailspam.json"},
       {"Nome": "Json_LogCodes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "logcodes.json"},
       {"Nome": "Json_Palavras","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "palavras.json"},
       {"Nome": "Mail_ContatoInvalido","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "contato_invalido.json"}
