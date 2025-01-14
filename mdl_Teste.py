@@ -29,106 +29,109 @@ SMTP_SERVER = config('SMTP_SERVER')
 SMTP_CC = config('SMTP_CC')
 
 
-def prc_connect_email():
-	log_info = "F1"
-	varl_detail = None
-	username = IMAP_USER
-	password = IMAP_PASS
-	imap_server = IMAP_SERVER
+def prc_connect_email(folder="inbox"):
+    log_info = "F1"
+    varl_detail = None
+    username = IMAP_USER
+    password = IMAP_PASS
+    imap_server = IMAP_SERVER
 
-	try:
-		log_info = "F3"
-		mail = imaplib.IMAP4_SSL(imap_server)
-		mail.login(username, password)
-		mail.select("inbox")
-		log_info = "F0"
+    try:
+        log_info = "F3"
+        mail = imaplib.IMAP4_SSL(imap_server)
+        mail.login(username, password)
+        status, _ = mail.select(folder)
+        if status != "OK":
+            raise Exception(f"Não foi possível acessar a pasta: {folder}")
+        log_info = "F0"
 
-	except Exception as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "F99"
-		raise
+    except Exception as e:
+        varl_detail = f"Erro na etapa {log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
 
-	return {"Resultado": mail, 'Status_log': log_info, 'Detail_log': varl_detail}
+    return {"Resultado": mail, 'Status_log': log_info, 'Detail_log': varl_detail, "Folder": folder}
 
 
-def prc_check_all_emails(mail):
-	log_info = "F1"
-	varl_detail = None
-	emails = []
+def prc_check_all_emails(mail, folder="inbox"):
+    log_info = "F1"
+    varl_detail = None
+    emails = []
 
-	try:
-		# Busca todos os e-mails
-		status, messages = mail.search(None, 'ALL')
-		log_info = "F3"
+    try:
+        log_info = "F2"
+        mail.select(folder)  # Seleciona a pasta desejada
 
-		# Verifica se retornou mensagens
-		if status != "OK" or not messages[0]:
-			varl_detail = "Nenhum e-mail encontrado."
-			log_info = "F99"
-			raise Exception(varl_detail)
+        # Busca todos os e-mails na pasta especificada
+        status, messages = mail.search(None, 'ALL')
+        if status != "OK" or not messages[0]:
+            varl_detail = f"Nenhum e-mail encontrado na pasta: {folder}."
+            log_info = "F99"
+            raise Exception(varl_detail)
 
-		# Lista de IDs dos e-mails
-		email_ids = messages[0].split()
+        # Lista de IDs dos e-mails
+        email_ids = messages[0].split()
+        log_info = "F3"
 
-		for e_id in email_ids:
-			# Faz a busca do e-mail pelo UID
-			_, msg = mail.fetch(e_id, "(RFC822)")
-			for response in msg:
-				if isinstance(response, tuple):
-					msg = email.message_from_bytes(response[1])
+        for e_id in email_ids:
+            _, msg = mail.fetch(e_id, "(RFC822)")
+            for response in msg:
+                if isinstance(response, tuple):
+                    msg = email.message_from_bytes(response[1])
 
-					# Decodifica o assunto
-					assunto, encoding = decode_header(msg.get("Subject") or "")[0]
-					if isinstance(assunto, bytes):
-						encoding = encoding or "utf-8"
-						assunto = assunto.decode(encoding, errors="ignore")
-					else:
-						assunto = assunto or "Assunto não definido"
+                    # Decodifica o assunto
+                    assunto, encoding = decode_header(msg.get("Subject") or "")[0]
+                    if isinstance(assunto, bytes):
+                        encoding = encoding or "utf-8"
+                        assunto = assunto.decode(encoding, errors="ignore")
+                    else:
+                        assunto = assunto or "Assunto não definido"
 
-					# Remetente
-					from_email = msg.get("From")
+                    # Remetente
+                    from_email = msg.get("From")
 
-					# Processa o corpo do e-mail
-					body = None
-					if msg.is_multipart():
-						for part in msg.walk():
-							content_type = part.get_content_type()
-							content_disposition = str(part.get("Content-Disposition"))
+                    # Processa o corpo do e-mail
+                    body = None
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            content_type = part.get_content_type()
+                            content_disposition = str(part.get("Content-Disposition"))
 
-							# Processa somente partes legíveis
-							if content_type == "text/plain" and "attachment" not in content_disposition:
-								payload = part.get_payload(decode=True)
-								body = fnc_decode_payload(payload)
-								break
-							elif content_type == "text/html" and not body:
-								payload = part.get_payload(decode=True)
-								body = fnc_decode_payload(payload)  # HTML como fallback
-					else:
-						payload = msg.get_payload(decode=True)
-						body = fnc_decode_payload(payload)
+                            # Processa somente partes legíveis
+                            if content_type == "text/plain" and "attachment" not in content_disposition:
+                                payload = part.get_payload(decode=True)
+                                body = fnc_decode_payload(payload)
+                                break
+                            elif content_type == "text/html" and not body:
+                                payload = part.get_payload(decode=True)
+                                body = fnc_decode_payload(payload)  # HTML como fallback
+                    else:
+                        payload = msg.get_payload(decode=True)
+                        body = fnc_decode_payload(payload)
 
-					# Adiciona à lista de e-mails
-					emails.append({
-						"from": from_email,
-						"assunto": assunto,
-						"body": body or "Corpo vazio",
-					})
+                    # Adiciona à lista de e-mails
+                    emails.append({
+                        "from": from_email,
+                        "assunto": assunto,
+                        "body": body or "Corpo vazio",
+                        "folder": folder  # Adiciona a pasta de origem
+                    })
 
-		log_info = "F0"
+        log_info = "F0"
 
-	except Exception as e:
-		varl_detail = f"{log_info}, {e}"
-		log_registra(
-			var_modulo=__name__,
-			var_funcao=inspect.currentframe().f_code.co_name,
-			var_detalhe=varl_detail,
-			var_erro=True
-		)
-		log_info = "F99"
-		raise
+    except Exception as e:
+        varl_detail = f"{log_info}, {e}"
+        log_registra(
+            var_modulo=__name__,
+            var_funcao=inspect.currentframe().f_code.co_name,
+            var_detalhe=varl_detail,
+            var_erro=True
+        )
+        log_info = "F99"
+        raise
 
-	return {"Resultado": emails, 'Status_log': log_info, 'Detail_log': varl_detail}
+    return {"Resultado": emails, 'Status_log': log_info, 'Detail_log': varl_detail, "Folder": folder}
 
 
 def fnc_remove_html_tags(html_content):
@@ -446,85 +449,8 @@ def prc_move_email(mail, assunto, target_folder):
 
 
 def main():
-	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
-	connection_result = prc_connect_email()
-	mail = connection_result['Resultado']
-
-	global exec_info
-	exec_info = "\nLI\n"
-
-	exec_info += "\tGI\n"
-	varg_erro = None
-	exec_info += "\tGF\n"
-
-	exec_info += "\t\tMI\n"
-
-	try:
-		emails_data = prc_check_all_emails(connection_result['Resultado'])["Resultado"]
-		if emails_data:
-			for email_data in emails_data:
-				print(email_data['assunto'])
-				if "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
-					processed_email = prc_process_email(email_data)
-					print("TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
-					if processed_email["email"].startswith('SPAM,'):
-						print('+1 mail SPAM')
-					else:
-						if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
-							caminho = json_caminho('Contato_VCard')
-							file_dir = caminho['Diretorio']
-							file_name = fnc_sanitize_filename(processed_email["nome"])
-							file_name = os.path.join(file_dir, file_name + '.vcf')
-							fnc_gerar_vcard(processed_email["nome"], processed_email["email"],
-											processed_email["telefone"], processed_email["mensagem"], file_name)
-							print('CARD GERADO')
-						else:
-							print('CARD NÃO GERADO')
-							file_name = None
-						if processed_email["telefone"] != "Não identificado":
-							pass
-							resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
-							exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-							exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-							exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-						elif processed_email["telefone"] == "Não identificado":
-							pass
-							# resultado = prc_reply_mail(processed_email)
-							# exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-							# exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-
-				elif email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
-					print('+1 extrato')
-					# caminho = json_caminho('Extrato_PJ')
-					# file_dir = caminho['Diretorio']
-					# sucesso = salvar_anexos(mail, email_data['uid'], file_dir)
-					# if sucesso:
-
-				elif email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
-					print('+1 mail ENC/RES')
-
-				else:
-					print('+1 excluido')
-					prc_move_email(mail, email_data['assunto'], 'AUTO_DELETE')
-				# gravar linha no excel
-				# gravar linha no Db
-		else:
-			print('não achou mails data')
-		exec_info += "\t\tMF\n"
-		varg_erro = False
-
-	except Exception as e:
-		exec_info += "\t\t\tM99\n"
-		exec_info += f"Traceback: {traceback.format_exc()}"
-		varg_erro = True
-		raise
-
-	finally:
-		exec_info += "LF\n"
-		mail.logout()
-		log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
-		logging.shutdown()
+	connection = prc_connect_email(folder="Inbox")
+	emails = prc_check_all_emails(connection["Resultado"], folder=connection["Folder"])
 
 
 if __name__ == "__main__":
