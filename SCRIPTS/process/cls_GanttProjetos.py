@@ -181,10 +181,7 @@ def main():
 
 	finally:
 		exec_info += "LF\n"
-		if varg_erro:
-			log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=True)
-		else:
-			log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=False)
+		log_registra(var_modulo=varg_modulo, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
 		logging.shutdown()
 
 
