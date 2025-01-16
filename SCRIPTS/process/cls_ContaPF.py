@@ -14,7 +14,6 @@ def fnc_processar_base():
 	caminhos = json_caminho('Arquivo_PF')
 	file_dir = caminhos['Diretorio']
 	file_name = os.path.join(file_dir, caminhos['Arquivo'])
-	pd.set_option('mode.chained_assignment', None)
 
 	try:
 		log_info = "F2"
@@ -22,8 +21,12 @@ def fnc_processar_base():
 
 		log_info = "F3"
 		df['MES_REF'] = pd.to_datetime(df['Data']).dt.to_period('M').astype(str).str.replace('-', '')
+		df_receita = (df[df['TIPO'] == 'RECEITA'].groupby(['Ano', 'MES_REF']).agg(RECEITA=('F_VALOR', 'sum')).reset_index())
+		df_despesa = (df[df['TIPO'] == 'DESPESA'].groupby(['Ano', 'MES_REF']).agg(DESPESA=('F_VALOR', 'sum')).reset_index())
 		df_saldo = (df.groupby(['Ano', 'MES_REF']).agg(SALDO=('F_VALOR', 'sum')).reset_index())
 
+		df_saldo = (df_saldo.merge(df_receita, on=['Ano', 'MES_REF'], how='left').merge(df_despesa, on=['Ano', 'MES_REF'], how='left'))
+		df_saldo[['RECEITA', 'DESPESA']] = df_saldo[['RECEITA', 'DESPESA']].fillna(0)
 		log_info = "F0"
 
 	except Exception as e:

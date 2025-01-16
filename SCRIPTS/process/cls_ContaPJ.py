@@ -45,6 +45,9 @@ def fnc_preparar_base():
 	file_dir = caminhos['Diretorio']
 	file_name = os.path.join(file_dir, caminhos['Arquivo'])
 	dataframes = []
+	pd.set_option('display.max_columns', None)
+	pd.set_option('display.max_rows', None)
+	pd.set_option('display.max_colwidth', None)
 
 	try:
 		log_info = "F3"
@@ -52,8 +55,10 @@ def fnc_preparar_base():
 			file_name = os.path.join(file_dir, arquivo)
 			if os.path.isfile(file_name):
 				if arquivo.lower().endswith('.csv'):
-					df = pd.read_csv(file_name)
-					dataframes.append(df)
+					if arquivo != 'NU_500633351_HISTORICO.csv':
+						df = pd.read_csv(file_name)
+						# df['ORIGEM_ARQUIVO'] = arquivo
+						dataframes.append(df)
 
 		log_info = "F4"
 		df_final = pd.concat(dataframes, ignore_index=True)
@@ -72,17 +77,34 @@ def fnc_preparar_base():
 	return {"Resultado": df_final, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_processar_base(df):
+def fnc_processar_base(df1):
 	log_info = "F1"
 	varl_detail = None
 
 	try:
 		log_info = "F3"
-		df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
-		df['Ano'] = df['Data'].dt.year
-		print(df['Descrição'].unique())
-		df['MES_REF'] = pd.to_datetime(df['Data']).dt.to_period('M').astype(str).str.replace('-', '')
-		df_saldo = (df.groupby(['Ano', 'MES_REF']).agg(SALDO=('Valor', 'sum')).reset_index())
+		caminhos = json_caminho('Extrato_PJ')
+		file_dir = caminhos['Diretorio']
+		file_name = os.path.join(file_dir, 'NU_500633351_HISTORICO.csv')
+		df2 = pd.read_csv(file_name, sep=";")
+
+		df3 = pd.concat([df1, df2], ignore_index=True)
+
+		df3['Data'] = pd.to_datetime(df3['Data'], format='%d/%m/%Y')
+		df3['Ano'] = df3['Data'].dt.year
+		df3['Valor'] = pd.to_numeric(df3['Valor'], errors='coerce')
+		df3['MES_REF'] = pd.to_datetime(df3['Data']).dt.to_period('M').astype(str).str.replace('-', '')
+		df3['TIPO'] = df3['Descrição'].apply(lambda x: 'RECEITA' if 'receb' in str(x).lower() or 'crã©dito' in str(x).lower() else ('DESPESA' if 'envia' in str(x).lower() else 'OUTRO'))
+		df3.drop(columns=['Identificador'], inplace=True)
+		df3.drop(columns=['Descrição'], inplace=True)
+		# df3.to_csv("df_final_exportado.csv", index=False)
+
+		df_receita = (df3[df3['TIPO'] == 'RECEITA'].groupby(['Ano', 'MES_REF']).agg(RECEITA=('Valor', 'sum')).reset_index())
+		df_despesa = (df3[df3['TIPO'] == 'DESPESA'].groupby(['Ano', 'MES_REF']).agg(DESPESA=('Valor', 'sum')).reset_index())
+		df_saldo = (df3.groupby(['Ano', 'MES_REF']).agg(SALDO=('Valor', 'sum')).reset_index())
+
+		df_saldo = (df_saldo.merge(df_receita, on=['Ano', 'MES_REF'], how='left').merge(df_despesa, on=['Ano', 'MES_REF'], how='left'))
+		df_saldo[['RECEITA', 'DESPESA']] = df_saldo[['RECEITA', 'DESPESA']].fillna(0)
 
 		log_info = "F0"
 
@@ -111,18 +133,18 @@ def main():
 	exec_info += "\t\tMI\n"
 	try:
 		resultado1 = prc_limpar_arquivos()
-		# exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
-		# exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
-		# exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
+		exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
 		resultado2 = fnc_preparar_base()
-		# exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
-		# exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
-		# exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
+		exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
 		resultado3 = fnc_processar_base(resultado2['Resultado'])
 		exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado3['Detail_log']}\n"
-		# exec_info += "\t\tMF\n"
+		exec_info += "\t\tMF\n"
 		varg_erro = False
 
 	except Exception as e:

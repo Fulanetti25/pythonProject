@@ -18,7 +18,7 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado = processar_base()
+		resultado = saldo_pj()
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
@@ -33,10 +33,7 @@ def main():
 
 	finally:
 		exec_info += "LF\n"
-		if varg_erro:
-			log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=True)
-		else:
-			log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=False)
+		log_registra(var_modulo=varg_modulo, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
 		logging.shutdown()
 
 
