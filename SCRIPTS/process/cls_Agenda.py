@@ -18,12 +18,11 @@ def etl_VerificaAgendamento(processo, horario_atual):
     return processo['Horario'] == horario_atual.strftime("%H:%M")
 
 def etl_ExecutaProcesso(processo):
-    if processo != "N/A":
-        log_info = "F1"
-        varl_detail = None
+    log_info = "F1"
+    varl_detail = None
 
-        try:
-            log_info = "F2"
+    try:
+        if processo != "N/A":
             log_info = "F3"
             with term.location(0, 60):
                 print("Executando", processo['Nome'], ", Aguarde...")
@@ -33,20 +32,20 @@ def etl_ExecutaProcesso(processo):
             if func:
                 resultado = func()
             else:
-                raise ValueError(f"Função {nome_processo} não encontrada.")
+                ValueError(f"Função {nome_processo} não encontrada.")
 
-            log_info = "F0"
+        log_info = "F0"
 
-        except Exception as e:
-            varl_detail = f"Erro na etapa {log_info}, {e}"
-            log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-            log_info = "F99"
-            raise
+    except Exception as e:
+        varl_detail = f"Erro na etapa {log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
 
-        finally:
-            pass
+    finally:
+        pass
 
-        return {"Resultado": str(nome_processo), 'Status_log': log_info, 'Detail_log': varl_detail}
+    return {"Resultado": str(nome_processo), 'Status_log': log_info, 'Detail_log': varl_detail}
 
 def main():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))

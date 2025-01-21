@@ -77,8 +77,8 @@ def prc_check_all_emails(mail):
 			for response in msg:
 				if isinstance(response, tuple):
 					msg = email.message_from_bytes(response[1])
+					message_id = msg.get("Message-ID")
 
-					# Decodifica o assunto
 					assunto, encoding = decode_header(msg.get("Subject") or "")[0]
 					if isinstance(assunto, bytes):
 						encoding = encoding or "utf-8"
@@ -86,17 +86,14 @@ def prc_check_all_emails(mail):
 					else:
 						assunto = assunto or "Assunto não definido"
 
-					# Remetente
 					from_email = msg.get("From")
 
-					# Processa o corpo do e-mail
 					body = None
 					if msg.is_multipart():
 						for part in msg.walk():
 							content_type = part.get_content_type()
 							content_disposition = str(part.get("Content-Disposition"))
 
-							# Processa somente partes legíveis
 							if content_type == "text/plain" and "attachment" not in content_disposition:
 								payload = part.get_payload(decode=True)
 								body = fnc_decode_payload(payload)
@@ -108,23 +105,18 @@ def prc_check_all_emails(mail):
 						payload = msg.get_payload(decode=True)
 						body = fnc_decode_payload(payload)
 
-					# Adiciona à lista de e-mails
 					emails.append({
 						"from": from_email,
 						"assunto": assunto,
 						"body": body or "Corpo vazio",
+						"message_id": message_id
 					})
 
 		log_info = "F0"
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
-		log_registra(
-			var_modulo=__name__,
-			var_funcao=inspect.currentframe().f_code.co_name,
-			var_detalhe=varl_detail,
-			var_erro=True
-		)
+		log_registra(var_modulo=__name__,var_funcao=inspect.currentframe().f_code.co_name,var_detalhe=varl_detail,var_erro=True)
 		log_info = "F99"
 		raise
 
@@ -342,107 +334,85 @@ def prc_reply_mail(processed_email):
 		return {"Resultado": "Erro ao processar o envio do e-mail.", 'Status_log': "F99", 'Detail_log': varl_detail}
 
 
-def prc_salvar_anexos(email, uid, diretorio_destino):
+def prc_salvar_anexos(email, assunto, diretorio_destino):
+	# INCLUIR O MESSAGE ID COMO CHAVE DA LOCALIZAÇÃO
 	try:
-		# Criação do diretório caso não exista
-		if not os.path.exists(diretorio_destino):
-			os.makedirs(diretorio_destino)
+		status, messages = email.search(None, f'SUBJECT "{assunto}"')
+		if status != "OK" or not messages[0]:
+			print("Nenhuma mensagem encontrada com o assunto especificado.")
+			return False
 
-		msg = message_from_bytes(email['Resultado'], policy=policy.default)
+		# Localiza o ID da mensagem
+		msg_ids = messages[0].split()
+		if not msg_ids:
+			print("Nenhuma mensagem encontrada com o assunto especificado.")
+			return False
+
+		# Faz o fetch da primeira mensagem encontrada
+		status, msg_data = email.fetch(msg_ids[0], "(RFC822)")
+		if status != "OK":
+			print("Erro ao buscar a mensagem.")
+			return False
+
+		# Lê os dados da mensagem
+		raw_email = msg_data[0][1]
+		msg = message_from_bytes(raw_email, policy=policy.default)
+		print(f"Assunto: {msg['Subject']}")
 		arquivos_salvos = []
-
-		# Iteração sobre os anexos da mensagem
 		for part in msg.iter_attachments():
 			if part.get_content_disposition() == "attachment":
 				file_name = part.get_filename()
 				if file_name:
 					file_path = os.path.join(diretorio_destino, file_name)
 					arquivos_salvos.append(file_path)
-
-		# Exibição dos anexos encontrados
-		print("\nArquivos encontrados:")
-		for idx, file in enumerate(arquivos_salvos, 1):
-			print(f"{idx}: {os.path.basename(file)}")
-
-		# Confirmação do salvamento
-		salvar = input("\nDeseja salvar os arquivos listados? (s/n): ").strip().lower()
-		if salvar != "s":
-			print("Salvamento cancelado pelo usuário.")
-			return False
-
-		# Salvar os arquivos confirmados
-		for file_path in arquivos_salvos:
-			with open(file_path, 'wb') as file:
-				part = next(p for p in msg.iter_attachments() if os.path.join(diretorio_destino, p.get_filename()) == file_path)
-				file.write(part.get_payload(decode=True))
-
-		print("Arquivos salvos com sucesso.")
+					with open(file_path, 'wb') as file:
+						file.write(part.get_payload(decode=True))
 		return True
 
 	except Exception as e:
-		print(f"Erro ao salvar anexos: {e}")
+		print(f"Erro ao localizar ou processar a mensagem: {e}")
 		return False
 
 
-def prc_move_email(mail, assunto, target_folder):
-	log_info = "M1"
-	varl_detail = None
-
+def prc_move_email(mail, message_id, target_folder):
 	try:
 		# Garantir que a pasta de destino comece com "INBOX."
 		if not target_folder.startswith("INBOX."):
 			target_folder = "INBOX." + target_folder
 
-		print(f"Tentando mover e-mails com o assunto '{assunto}' para a pasta '{target_folder}'")
-
-		# Seleciona a pasta INBOX para buscar os e-mails
+		# Seleciona a pasta INBOX
 		mail.select("inbox")
-		log_info = "M2"
 
-		# Usar os 20 primeiros caracteres do assunto
-		assunto_curto = assunto[:20]
-		print(f"Filtrando por assunto curto: '{assunto_curto}'")
-
-		# Pesquisa os e-mails pelo assunto curto
-		query = f'SUBJECT "{assunto_curto}"'
-		print(f"Query de busca: {query}")
+		# Pesquisa o e-mail pelo Message-ID usando HEADER
+		query = f'HEADER Message-ID "{message_id}"'
 		status, messages = mail.search(None, query)
-		print(f"Status da busca: {status}, Mensagens encontradas: {messages}")
 
 		if status != "OK" or not messages[0]:
-			raise Exception(f"E-mail com o assunto parcial '{assunto_curto}' não encontrado.")
+			raise Exception(f"E-mail com o Message-ID '{message_id}' não encontrado.")
 
-		# Processar os e-mails encontrados
+		# Mover o e-mail para a pasta destino
 		email_ids = messages[0].split()
 		for email_id in email_ids:
-			print(f"Processando e-mail ID: {email_id.decode('utf-8')}")
-
 			# Copia o e-mail para a pasta de destino
-			log_info = "M3"
 			status, _ = mail.copy(email_id, target_folder)
 			if status != "OK":
 				raise Exception(f"Erro ao copiar o e-mail ID {email_id} para '{target_folder}'.")
 
-			# Marca o e-mail como excluído na INBOX
-			log_info = "M4"
+			# Marca o e-mail como excluído na pasta original
 			status, _ = mail.store(email_id, '+FLAGS', '\\Deleted')
 			if status != "OK":
 				raise Exception(f"Erro ao marcar o e-mail ID {email_id} como excluído.")
 
 		# Expunge para remover os e-mails marcados como excluídos
-		log_info = "M5"
 		mail.expunge()
-		log_info = "M0"
 
-		print(f"E-mails com o assunto parcial '{assunto_curto}' movidos com sucesso para '{target_folder}'.")
+		print(f"E-mail com Message-ID '{message_id}' movido com sucesso para '{target_folder}'.")
 
 	except Exception as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "M99"
-		raise
-	finally:
-		print(f"Finalizado o processamento do assunto '{assunto}'. Última etapa: {log_info}")
+		print(f"Erro ao mover e-mail: {e}")
+		return False
+
+	return True
 
 
 def main():
@@ -463,7 +433,7 @@ def main():
 		emails_data = prc_check_all_emails(connection_result['Resultado'])["Resultado"]
 		if emails_data:
 			for email_data in emails_data:
-				print(email_data['assunto'])
+				print(email_data['assunto'], email_data['message_id'])
 				if "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
 					processed_email = prc_process_email(email_data)
 					print("TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
@@ -494,19 +464,21 @@ def main():
 							# exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
-				elif email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
+				if email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
 					print('+1 extrato')
-					# caminho = json_caminho('Extrato_PJ')
-					# file_dir = caminho['Diretorio']
-					# sucesso = salvar_anexos(mail, email_data['uid'], file_dir)
-					# if sucesso:
+					caminho = json_caminho('Extrato_PJ')
+					file_dir = caminho['Diretorio']
+					resultado = prc_salvar_anexos(mail, email_data['assunto'], file_dir)
+					if resultado:
+						pass
+						# prc_move_email(mail, email_data['assunto'], 'AUTO_EXTRATO')
 
 				elif email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
 					print('+1 mail ENC/RES')
 
 				else:
 					print('+1 excluido')
-					# prc_move_email(mail, email_data['assunto'], 'AUTO_DELETE')
+					print(prc_move_email(mail, email_data['message_id'], 'AUTO_DELETE'))
 				# gravar linha no excel
 				# gravar linha no Db
 		else:

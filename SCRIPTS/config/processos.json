@@ -89,6 +89,17 @@
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo das entregas e prazos comprometidos."
     },
     {
+      "Horario": "07:50",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Util",
+      "Classe": "N/A",
+      "Nome": "Relatório Follow de Devs",
+      "Processo": "N/A",
+      "Predecessor": "N/A",
+      "Descricao": "GOAT e por período, Ticket, Projetos Entregues"
+    },
+    {
       "Horario": "08:00",
       "Frequencia": "Diario",
       "Intervalo": "N/A",
