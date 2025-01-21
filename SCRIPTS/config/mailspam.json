@@ -1,5 +1,6 @@
 {
   "mailspam": [
-    {"Domain": "@jiangytiuo"}
+    {"Domain": "@jiangytiuo"},
+    {"Domain": "@jianvan"}
   ]
 }

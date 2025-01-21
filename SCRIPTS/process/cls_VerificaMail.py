@@ -434,11 +434,24 @@ def main():
 		if emails_data:
 			for email_data in emails_data:
 				print(email_data['assunto'], email_data['message_id'])
-				if "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
+				if email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
+					print('+1 mail ENC/RES')
+
+				elif email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
+					print('+1 extrato')
+					caminho = json_caminho('Extrato_PJ')
+					file_dir = caminho['Diretorio']
+					resultado = prc_salvar_anexos(mail, email_data['assunto'], file_dir)
+					if resultado:
+						pass
+						prc_move_email(mail, email_data['assunto'], 'AUTO_EXTRATO')
+
+				elif "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
 					processed_email = prc_process_email(email_data)
 					print("TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
 					if processed_email["email"].startswith('SPAM,'):
 						print('+1 mail SPAM')
+						prc_move_email(mail, email_data['message_id'], 'AUTO_SPAM')
 					else:
 						if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
 							caminho = json_caminho('Contato_VCard')
@@ -452,11 +465,11 @@ def main():
 							print('CARD NÃO GERADO')
 							file_name = None
 						if processed_email["telefone"] != "Não identificado":
-							pass
 							resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
 							exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 							exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 							exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+							prc_move_email(mail, email_data['message_id'], 'AUTO_LEAD')
 						elif processed_email["telefone"] == "Não identificado":
 							pass
 							# resultado = prc_reply_mail(processed_email)
@@ -464,22 +477,9 @@ def main():
 							# exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
-				if email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
-					print('+1 extrato')
-					caminho = json_caminho('Extrato_PJ')
-					file_dir = caminho['Diretorio']
-					resultado = prc_salvar_anexos(mail, email_data['assunto'], file_dir)
-					if resultado:
-						pass
-						# prc_move_email(mail, email_data['assunto'], 'AUTO_EXTRATO')
-
-				elif email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
-					print('+1 mail ENC/RES')
-
 				else:
 					print('+1 excluido')
-					print(prc_move_email(mail, email_data['message_id'], 'AUTO_DELETE'))
-				# gravar linha no excel
+					prc_move_email(mail, email_data['message_id'], 'AUTO_DELETE')
 				# gravar linha no Db
 		else:
 			print('não achou mails data')
