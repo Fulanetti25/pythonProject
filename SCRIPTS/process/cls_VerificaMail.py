@@ -66,7 +66,6 @@ def prc_check_all_emails(mail):
 		if status != "OK" or not messages[0]:
 			varl_detail = "Nenhum e-mail encontrado."
 			log_info = "F99"
-			raise Exception(varl_detail)
 
 		# Lista de IDs dos e-mails
 		email_ids = messages[0].split()
@@ -118,7 +117,6 @@ def prc_check_all_emails(mail):
 		varl_detail = f"{log_info}, {e}"
 		log_registra(var_modulo=__name__,var_funcao=inspect.currentframe().f_code.co_name,var_detalhe=varl_detail,var_erro=True)
 		log_info = "F99"
-		raise
 
 	return {"Resultado": emails, 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -339,25 +337,21 @@ def prc_salvar_anexos(email, assunto, diretorio_destino):
 	try:
 		status, messages = email.search(None, f'SUBJECT "{assunto}"')
 		if status != "OK" or not messages[0]:
-			print("Nenhuma mensagem encontrada com o assunto especificado.")
 			return False
 
 		# Localiza o ID da mensagem
 		msg_ids = messages[0].split()
 		if not msg_ids:
-			print("Nenhuma mensagem encontrada com o assunto especificado.")
 			return False
 
 		# Faz o fetch da primeira mensagem encontrada
 		status, msg_data = email.fetch(msg_ids[0], "(RFC822)")
 		if status != "OK":
-			print("Erro ao buscar a mensagem.")
 			return False
 
 		# Lê os dados da mensagem
 		raw_email = msg_data[0][1]
 		msg = message_from_bytes(raw_email, policy=policy.default)
-		print(f"Assunto: {msg['Subject']}")
 		arquivos_salvos = []
 		for part in msg.iter_attachments():
 			if part.get_content_disposition() == "attachment":
@@ -370,7 +364,6 @@ def prc_salvar_anexos(email, assunto, diretorio_destino):
 		return True
 
 	except Exception as e:
-		print(f"Erro ao localizar ou processar a mensagem: {e}")
 		return False
 
 
@@ -406,10 +399,8 @@ def prc_move_email(mail, message_id, target_folder):
 		# Expunge para remover os e-mails marcados como excluídos
 		mail.expunge()
 
-		print(f"E-mail com Message-ID '{message_id}' movido com sucesso para '{target_folder}'.")
 
 	except Exception as e:
-		print(f"Erro ao mover e-mail: {e}")
 		return False
 
 	return True
@@ -433,12 +424,10 @@ def main():
 		emails_data = prc_check_all_emails(connection_result['Resultado'])["Resultado"]
 		if emails_data:
 			for email_data in emails_data:
-				print(email_data['assunto'], email_data['message_id'])
 				if email_data['assunto'][:5].upper() in ["RES: ", "ENC: "]:
 					print('+1 mail ENC/RES')
 
 				elif email_data['assunto'].upper() == "EXTRATO DA SUA CONTA PJ":
-					print('+1 extrato')
 					caminho = json_caminho('Extrato_PJ')
 					file_dir = caminho['Diretorio']
 					resultado = prc_salvar_anexos(mail, email_data['assunto'], file_dir)
@@ -448,9 +437,7 @@ def main():
 
 				elif "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
 					processed_email = prc_process_email(email_data)
-					print("TEL: ", processed_email["telefone"], "MAIL: ", processed_email["email"], "TIPO: ", processed_email["assunto"])
 					if processed_email["email"].startswith('SPAM,'):
-						print('+1 mail SPAM')
 						prc_move_email(mail, email_data['message_id'], 'AUTO_SPAM')
 					else:
 						if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
@@ -460,9 +447,7 @@ def main():
 							file_name = os.path.join(file_dir, file_name + '.vcf')
 							fnc_gerar_vcard(processed_email["nome"], processed_email["email"],
 											processed_email["telefone"], processed_email["mensagem"], file_name)
-							print('CARD GERADO')
 						else:
-							print('CARD NÃO GERADO')
 							file_name = None
 						if processed_email["telefone"] != "Não identificado":
 							resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
@@ -478,13 +463,11 @@ def main():
 							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
 				else:
-					print('+1 excluido')
 					prc_move_email(mail, email_data['message_id'], 'AUTO_DELETE')
 				# gravar linha no Db
 		else:
-			print('não achou mails data')
-		exec_info += "\t\tMF\n"
-		varg_erro = False
+			exec_info += "\t\tMF\n"
+			varg_erro = False
 
 	except Exception as e:
 		exec_info += "\t\t\tM99\n"

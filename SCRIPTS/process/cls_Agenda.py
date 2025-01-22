@@ -107,23 +107,18 @@ def main():
                     ultimo = fn_ultimo_log(processo['Classe'])
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
                     if processo['Classe'] != "N/A":
-                        if ultimo != "":
-                            if processo["Frequencia"] == "Diario": #incluir regra do predecessor
-                                if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
-                                    while horario_processo <= horario_atual:
-                                        horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
-                                    processo['Horario'] = horario_processo.strftime("%H:%M")
-                            if processo["Frequencia"] == "Intervalo":
-                                if processo["Intervalo"] != "N/A":
-                                    intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
-                                    while horario_processo <= horario_atual:
-                                        horario_processo += intervalo
-                                    processo['Horario'] = horario_processo.strftime("%H:%M")
-                        else:
-                            if processo["Frequencia"] == "Diario":
-                                while horario_processo < horario_atual:
+                        if processo["Frequencia"] == "Diario": #incluir regra do predecessor
+                            if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
+                                while horario_processo <= horario_atual:
                                     horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
+                        if processo["Frequencia"] == "Intervalo":
+                            if processo["Intervalo"] != "N/A":
+                                intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
+                                while horario_processo <= horario_atual:
+                                    horario_processo += intervalo
+                                processo['Horario'] = horario_processo.strftime("%H:%M")
+
                 processos_futuros = [horario for horario in processos_filtrados if
                                      horario["Horario"] >= datetime.now().strftime('%H:%M')]
                 if processos_futuros:

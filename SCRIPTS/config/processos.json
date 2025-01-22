@@ -5,7 +5,7 @@
       "Frequencia": "Intervalo",
       "Intervalo": "00:10",
       "Dia": "All",
-      "Classe": "N/A",
+      "Classe": "cls_VerificaMail",
       "Nome": "Enviar Leads para o whatsapp da ADM",
       "Processo": "leads_main",
       "Predecessor": "N/A",
@@ -120,6 +120,17 @@
       "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Acompanhamento das notas emitidas dentro do limite de um MEI"
+    },
+    {
+      "Horario": "08:00",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Limpeza de Drive",
+      "Processo": "N/A",
+      "Predecessor": "N/A",
+      "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
     }
   ]
 }
