@@ -42,7 +42,6 @@ def etl_ExportaProjetos():
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	finally:
 		if varl_aberto == True:
@@ -76,7 +75,6 @@ def main():
 		exec_info += "\t\t\tM99\n"
 		exec_info += f"Traceback: {traceback.format_exc()}"
 		varg_erro = True
-		raise
 
 	finally:
 		exec_info += "LF\n"

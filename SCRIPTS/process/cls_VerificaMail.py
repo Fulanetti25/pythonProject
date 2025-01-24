@@ -47,7 +47,6 @@ def prc_connect_email():
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	return {"Resultado": mail, 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -134,7 +133,6 @@ def fnc_remove_html_tags(html_content):
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	return soup.get_text(separator=" ").strip()
 
@@ -180,7 +178,6 @@ END:VCARD"""
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	return {"Resultado": file_name, 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -259,7 +256,6 @@ def prc_process_email(msg_data):
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	return {
 		"assunto": assunto,
@@ -380,21 +376,15 @@ def prc_move_email(mail, message_id, target_folder):
 		query = f'HEADER Message-ID "{message_id}"'
 		status, messages = mail.search(None, query)
 
-		if status != "OK" or not messages[0]:
-			raise Exception(f"E-mail com o Message-ID '{message_id}' não encontrado.")
-
 		# Mover o e-mail para a pasta destino
 		email_ids = messages[0].split()
 		for email_id in email_ids:
 			# Copia o e-mail para a pasta de destino
 			status, _ = mail.copy(email_id, target_folder)
-			if status != "OK":
-				raise Exception(f"Erro ao copiar o e-mail ID {email_id} para '{target_folder}'.")
+
 
 			# Marca o e-mail como excluído na pasta original
 			status, _ = mail.store(email_id, '+FLAGS', '\\Deleted')
-			if status != "OK":
-				raise Exception(f"Erro ao marcar o e-mail ID {email_id} como excluído.")
 
 		# Expunge para remover os e-mails marcados como excluídos
 		mail.expunge()
@@ -473,7 +463,6 @@ def main():
 		exec_info += "\t\t\tM99\n"
 		exec_info += f"Traceback: {traceback.format_exc()}"
 		varg_erro = True
-		raise
 
 	finally:
 		exec_info += "LF\n"

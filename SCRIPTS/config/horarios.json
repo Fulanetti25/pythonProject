@@ -1,12 +1,12 @@
 {
   "horarios": [
-    {"Dia": "Monday", "HorarioMinimo": "08:00", "HorarioMaximo": "18:00"},
-    {"Dia": "Tuesday", "HorarioMinimo": "08:00", "HorarioMaximo": "18:00"},
-    {"Dia": "Wednesday", "HorarioMinimo": "08:00", "HorarioMaximo": "18:00"},
-    {"Dia": "Thursday", "HorarioMinimo": "08:00", "HorarioMaximo": "18:00"},
-    {"Dia": "Friday", "HorarioMinimo": "10:00", "HorarioMaximo": "15:50"},
-    {"Dia": "Saturday", "HorarioMinimo": "10:00", "HorarioMaximo": "15:50"},
-    {"Dia": "Sunday", "HorarioMinimo": "10:00", "HorarioMaximo": "15:50"},
-    {"Dia": "Holiday", "HorarioMinimo": "10:00", "HorarioMaximo": "15:50"}
+    {"Dia": "Monday", "HorarioMinimo": "07:00", "HorarioMaximo": "18:00"},
+    {"Dia": "Tuesday", "HorarioMinimo": "07:00", "HorarioMaximo": "18:00"},
+    {"Dia": "Wednesday", "HorarioMinimo": "07:00", "HorarioMaximo": "18:00"},
+    {"Dia": "Thursday", "HorarioMinimo": "07:00", "HorarioMaximo": "18:00"},
+    {"Dia": "Friday", "HorarioMinimo": "07:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Saturday", "HorarioMinimo": "07:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Sunday", "HorarioMinimo": "07:00", "HorarioMaximo": "15:50"},
+    {"Dia": "Holiday", "HorarioMinimo": "07:00", "HorarioMaximo": "15:50"}
   ]
 }

@@ -65,11 +65,14 @@ def fn_ultimo_log(nome_classe):
     registros = fn_log_recupera(nome_classe)
 
     if registros:
-        ultima_execucao_str = registros[0].split()[0]
-        ultima_execucao = datetime.strptime(ultima_execucao_str, '%Y-%m-%d')
-        return ultima_execucao
+        registros_sucesso = [registro for registro in registros if "Sucesso" in registro]
+
+        if registros_sucesso:
+            ultima_execucao_str = registros_sucesso[0].split(',')[0]
+            ultima_execucao = datetime.strptime(ultima_execucao_str, '%Y-%m-%d %H:%M:%S')
+            return ultima_execucao
     else:
-        return ""
+        return None
 
 
 def tela_limpar():
