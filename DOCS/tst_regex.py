@@ -19,8 +19,11 @@ def testar_regex(body):
 
 # Testando a entrada
 body = """
-Necessidade do Cliente: 
-Contato: 85991743821 
-E-mail: josenildog@gmail.com 
+Necessidade do Cliente: UJ4SglF 1i3J oY5y3Wp pK7RpvU jI5J wtN1miO 
+
+Contato: williamsellisbcvroa@gmail.com 
+
+E-mail: williamsellisbcvroa@gmail.com 
+
 """
 testar_regex(body)

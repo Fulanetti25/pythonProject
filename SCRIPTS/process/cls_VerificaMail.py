@@ -12,15 +12,14 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import message_from_bytes, policy
 from bs4 import BeautifulSoup
-from imapclient import imap_utf7
 from email.header import decode_header
 from datetime import datetime
 from decouple import config
+from spellchecker import SpellChecker
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_OutWhatsapp import enviar_whatsapp_anexo
-
 
 IMAP_SERVER = config('IMAP_SERVER')
 IMAP_USER = config('IMAP_USER')
@@ -153,6 +152,18 @@ def fnc_decode_payload(payload):
 		return payload.decode("latin1", errors="ignore")  # Fallback
 
 	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_percentual_sentido(texto):
+	spell = SpellChecker(language='pt')
+	palavras = re.findall(r'\b\w+\b', texto.lower())
+
+	if not palavras:
+		return 0
+
+	palavras_validas = [palavra for palavra in palavras if palavra in spell.word_frequency]
+	percentual_sentido = len(palavras_validas) / len(palavras) * 100
+	return percentual_sentido
 
 
 def fnc_gerar_vcard(nome, email, telefone, mensagem, file_name):
@@ -422,7 +433,6 @@ def main():
 					file_dir = caminho['Diretorio']
 					resultado = prc_salvar_anexos(mail, email_data['assunto'], file_dir)
 					if resultado:
-						pass
 						prc_move_email(mail, email_data['assunto'], 'AUTO_EXTRATO')
 
 				elif "SOLICITACAO DE ORCAMENTO" in email_data['assunto'].upper():
@@ -435,10 +445,11 @@ def main():
 							file_dir = caminho['Diretorio']
 							file_name = fnc_sanitize_filename(processed_email["nome"])
 							file_name = os.path.join(file_dir, file_name + '.vcf')
-							fnc_gerar_vcard(processed_email["nome"], processed_email["email"],
-											processed_email["telefone"], processed_email["mensagem"], file_name)
-						else:
-							file_name = None
+							percentual = fnc_percentual_sentido(processed_email["mensagem"])
+							if percentual > 50.0 or processed_email["mensagem"] == "":
+								fnc_gerar_vcard(processed_email["nome"], processed_email["email"], processed_email["telefone"], processed_email["mensagem"], file_name)
+							else:
+								file_name = None
 						if processed_email["telefone"] != "Não identificado":
 							resultado = enviar_whatsapp_anexo("PSM - ADMINISTRAÇÃO", processed_email["mensagem"], file_name)
 							exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
@@ -446,11 +457,11 @@ def main():
 							exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 							prc_move_email(mail, email_data['message_id'], 'AUTO_LEAD')
 						elif processed_email["telefone"] == "Não identificado":
-							pass
-							# resultado = prc_reply_mail(processed_email)
-							# exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-							# exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-							# exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+							resultado = prc_reply_mail(processed_email)
+							exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+							exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+							exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+							prc_move_email(mail, email_data['message_id'], 'AUTO_LEAD')
 
 				else:
 					prc_move_email(mail, email_data['message_id'], 'AUTO_DELETE')
