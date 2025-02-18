@@ -181,13 +181,19 @@ def tela_inferior_dir(term):
             exibir_texto(term, col_base + i * 15, linha_base, str(valor), estilo=term.bold_white)
 
 
-def desenhar_tela(term, proxima_execucao, processos_filtrados, fake=False, tempo=True):
+def desenhar_tela(term, proxima_execucao, processos_filtrados, fake=False, tempo=True, executando = True):
     tela_limpar()
-    tela_inferior_esq(term)
-    tela_superior_esq(term)
-    tela_tag_proximo(term, proxima_execucao)
-    tela_superior_dir(term, processos_filtrados)
-    tela_inferior_dir(term)
+    if executando == True:
+        tela_inferior_esq(term)
+        tela_tag_proximo(term, proxima_execucao)
+        with term.location(0, 59):
+            print("Executando Processo " + proxima_execucao + "! Aguarde...")
+    else:
+        tela_inferior_esq(term)
+        tela_tag_proximo(term, proxima_execucao)
+        tela_superior_dir(term, processos_filtrados)
+        tela_superior_esq(term)
+        tela_inferior_dir(term)
     if tempo:
         barra_tempo(term, COLUNA_ESQ, LINHA_TEMPORIZADOR+1, 30, 1)
     if fake:

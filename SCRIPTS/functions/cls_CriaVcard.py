@@ -28,11 +28,12 @@ def fnc_percentual_sentido(texto):
 	return percentual_sentido
 
 
-def fnc_gerar_vcard(nome, email, telefone, mensagem, file_name):
+def fnc_gerar_vcard(nome, email, telefone, mensagem):
 	log_info = "F1"
 	varl_detail = None
 	caminho = json_caminho('Contato_VCard')
 	file_dir = caminho['Diretorio']
+	file_name = None
 
 	try:
 		log_info = "F2"
@@ -75,7 +76,7 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado = fnc_gerar_vcard('VTeste', 'v@v.com', '12345678', 'Teste Textual', 'Nome_Teste')
+		resultado = fnc_gerar_vcard('VTeste', 'v@v.com', '12345678', 'Teste Textual')
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tPercentual: {resultado['Percentual']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"

@@ -1,6 +1,7 @@
 {
     "caminhos": [
       {"Nome": "Log_Acompanhamento","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "python.log"},
+      {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas_sql.json"},
       {"Nome": "Base_Projetos_Excel","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "projetos.csv"},
       {"Nome": "Base_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "gantt.csv"},
       {"Nome": "Imagem_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "grafico_gantt.png"},

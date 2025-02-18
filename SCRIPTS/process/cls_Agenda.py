@@ -13,21 +13,23 @@ from SCRIPTS.process.cls_Exporta import main as exporta_main
 from SCRIPTS.process.cls_GooglePalavras import main as google_main
 from SCRIPTS.process.cls_VerificaMail import main as leads_main
 from SCRIPTS.process.cls_GanttProjetos import main as gantt_main
+from SCRIPTS.process.cls_LimpaLogs import main as logs_main
 
 def etl_VerificaAgendamento(processo, horario_atual):
     return processo['Horario'] == horario_atual.strftime("%H:%M")
 
-def etl_ExecutaProcesso(processo):
+def etl_ExecutaProcesso(processo,proxima_execucao):
     log_info = "F1"
     varl_detail = None
 
     try:
         if processo != "N/A":
             log_info = "F3"
-            with term.location(0, 60):
-                print("Executando", processo['Nome'], ", Aguarde...")
 
             nome_processo = processo['Processo']
+            desenhar_tela(term, proxima_execucao:= nome_processo, fake:=True, tempo:=False, executando:=True)
+
+
             func = globals().get(nome_processo)
             if func:
                 resultado = func()
@@ -85,17 +87,16 @@ def main():
                 horario_atual = datetime.now()
 
                 # Inicia Execucao
-                desenhar_tela(term, proxima_execucao, processos_filtrados, False, False)
+                desenhar_tela(term, proxima_execucao, processos_filtrados, False, False, False)
                 if horarios_filtrados[0]["HorarioMinimo"] <= horario_atual.strftime("%H:%M") <= horarios_filtrados[0]["HorarioMaximo"]:
                     if processos_futuros:
                         for processo in processos_futuros:
                             if etl_VerificaAgendamento(processo, horario_atual):
-                                resultado = etl_ExecutaProcesso(processo)
+                                resultado = etl_ExecutaProcesso(processo, proxima_execucao)
                                 exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
                                 exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
                                 exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-                                desenhar_tela(term, proxima_execucao, processos_filtrados, True, False)
-                    desenhar_tela(term, proxima_execucao, processos_filtrados, False, True)
+                    desenhar_tela(term, proxima_execucao, processos_filtrados, False, True, False)
                     varg_erro = False
                 else:
                     print(f"Fora do horário permitido ({dia_semana}, das {horarios_filtrados[0]["HorarioMinimo"]} as {horarios_filtrados[0]["HorarioMaximo"]}). \nAguardando próximo intervalo.")
@@ -108,9 +109,12 @@ def main():
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
                     if processo['Classe'] != "N/A":
                         if processo["Frequencia"] == "Diario": #incluir regra do predecessor
-                            if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
-                                while horario_processo <= horario_atual:
-                                    horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
+                            if ultimo:
+                                if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
+                                    while horario_processo <= horario_atual:
+                                        horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
+                                    processo['Horario'] = horario_processo.strftime("%H:%M")
+                            else:
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
                         if processo["Frequencia"] == "Intervalo":
                             if processo["Intervalo"] != "N/A":
@@ -118,7 +122,6 @@ def main():
                                 while horario_processo <= horario_atual:
                                     horario_processo += intervalo
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
-
                 processos_futuros = [horario for horario in processos_filtrados if
                                      horario["Horario"] >= datetime.now().strftime('%H:%M')]
                 if processos_futuros:

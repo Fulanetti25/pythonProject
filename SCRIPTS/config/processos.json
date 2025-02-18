@@ -3,7 +3,7 @@
     {
       "Horario": "08:01",
       "Frequencia": "Intervalo",
-      "Intervalo": "00:10",
+      "Intervalo": "00:20",
       "Dia": "All",
       "Classe": "cls_VerificaMail",
       "Nome": "Enviar Leads para o whatsapp da ADM",
@@ -26,7 +26,7 @@
       "Horario": "08:05",
       "Frequencia": "Intervalo",
       "Intervalo": "00:10",
-      "Dia": "All",
+      "Dia": "Util",
       "Classe": "cls_GooglePalavras",
       "Nome": "Extração Google Palavras",
       "Processo": "google_main",
@@ -131,6 +131,17 @@
       "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
+    },
+    {
+      "Horario": "10:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_LimpaLogs",
+      "Nome": "Limpeza de Logs",
+      "Processo": "logs_main",
+      "Predecessor": "N/A",
+      "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
     }
   ]
 }
