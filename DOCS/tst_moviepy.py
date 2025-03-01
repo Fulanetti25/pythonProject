@@ -1,32 +1,29 @@
-import moviepy.editor
-print("MoviePy instalado com sucesso!")
+# necessario configurar o complemento FFMPEG, baixado externamente:
+# Acesse o site oficial do FFmpeg: Visite https://ffmpeg.org/download.html.
+# Selecione a versão adequada para o seu sistema operacional: O FFmpeg oferece pacotes pré-compilados para diferentes sistemas operacionais. Escolha aquele que corresponde ao seu sistema (Windows, macOS, Linux, etc.).
+# Siga as instruções de instalação: Cada sistema operacional pode ter procedimentos específicos para instalação. Certifique-se de seguir as orientações fornecidas no site para garantir uma instalação correta.
 
-import os
-from moviepy.editor import VideoFileClip
+import pygame #usado como complementar para facilitar o PREVIEW dos dados
 
-def rotate_videos(input_folder, output_folder, rotation=180):
-    # Cria a pasta de saída se não existir
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+# BASICÃO
 
-    for file_name in os.listdir(input_folder):
-        # Filtra arquivos de vídeo
-        if file_name.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
-            input_path = os.path.join(input_folder, file_name)
-            output_path = os.path.join(output_folder, file_name)
+from moviepy.editor import  AudioFileClip, ImageClip, VideoFileClip, CompositeVideoClip
 
-            try:
-                print(f"Processando: {file_name}")
-                with VideoFileClip(input_path) as clip:
-                    # Gira o vídeo
-                    rotated_clip = clip.rotate(rotation)
-                    rotated_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
-            except Exception as e:
-                print(f"Erro ao processar {file_name}: {e}")
+video = VideoFileClip(r'C:\Users\paulo\Downloads\PROJETOS\Drumeibes\Always Somewhere\v1.mp4').subclip(0,10)
+# video.size
+# video.duration
+# video.fps
+# video.iter_frames()
+audio = AudioFileClip(r'C:\Users\paulo\Downloads\PROJETOS\Drumeibes\Always Somewhere\a1.mp3').subclip(8,18)
+# audio.fps
+# audio.nchannels
+image = ImageClip(r'C:\Users\paulo\Downloads\PROJETOS\Drumeibes\Always Somewhere\i1.png', duration = 10)
+# image.size
+# image.duration
+# image.img
 
-# Configurações
-input_folder = r"C:\Users\paulo\Downloads\TEMP\Bike Flex"  # Substitua pelo caminho da pasta com os vídeos
-output_folder = r"C:\Users\paulo\Downloads\TEMP\Bike Flex\saida"   # Substitua pelo caminho da pasta para salvar os vídeos
+compose = CompositeVideoClip([video,image])
+compose.audio = audio
 
-# Executa o script
-rotate_videos(input_folder, output_folder)
+# compose.preview()
+compose.write_videofile(r'C:\Users\paulo\Downloads\PROJETOS\Drumeibes\Always Somewhere\r1.mp4')

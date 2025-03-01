@@ -13,6 +13,65 @@ server = config('SQL_SERVER')
 database = config('SQL_DATABASE')
 
 
+def prc_executa_db(sql_query, params):
+	log_info = "F1"
+	varl_detail = None
+	conexao = None
+
+	try:
+		log_info = "F2"
+		conexao = fnc_connect_local()
+		conn_obj = conexao.get("Resultado")
+		conn_log = conexao.get("Detail_log")
+
+		log_info = "F3"
+		fnc_execute_sql(conn_obj, sql_query, params)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		fnc_salvar_falha('SQL_SERVER', conn_log, sql_query, params)
+		log_info = "F99"
+
+	finally:
+		fnc_close_local(conn_obj)
+
+	return {"Resultado": "Executado", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_execute_sql(conexao, query, params=None):
+	log_info = "F1"
+	varl_detail = None
+	result = None  # Vai armazenar o resultado da consulta
+
+	try:
+		log_info = "F2"
+		cursor = conexao.cursor()
+
+		cursor.execute(query, params)
+
+		if query.strip().lower().startswith("select"):
+			result = cursor.fetchall()  # Retorna todos os resultados
+		else:
+			conexao.commit()
+			result = cursor.rowcount  # Número de linhas afetadas para INSERT, UPDATE, DELETE
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def fnc_connect_local():
 	log_info = "F1"
 	varl_detail = None
@@ -56,37 +115,6 @@ def fnc_close_local(conexao):
 		pass
 
 	return {"Resultado": "Conexão fechada", 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
-def fnc_execute_sql(conexao, query, params=None):
-	log_info = "F1"
-	varl_detail = None
-	result = None  # Vai armazenar o resultado da consulta
-
-	try:
-		log_info = "F2"
-		cursor = conexao.cursor()
-
-		cursor.execute(query, params)
-
-		if query.strip().lower().startswith("select"):
-			result = cursor.fetchall()  # Retorna todos os resultados
-		else:
-			conexao.commit()
-			result = cursor.rowcount  # Número de linhas afetadas para INSERT, UPDATE, DELETE
-
-		log_info = "F0"
-
-	except Exception as e:
-		varl_detail = f"{log_info}, {e}"
-		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "F99"
-		raise
-
-	finally:
-		pass
-
-	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_salvar_falha(server, conn_log, sql_query, params):
@@ -153,34 +181,6 @@ def fnc_reprocessar_falha():
 			json_limpa(falhas_path)
 
 	return {"Resultado": "Pilha Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
-def prc_executa_db(sql_query, params):
-	log_info = "F1"
-	varl_detail = None
-	conexao = None
-
-	try:
-		log_info = "F2"
-		conexao = fnc_connect_local()
-		conn_obj = conexao.get("Resultado")
-		conn_log = conexao.get("Detail_log")
-
-		log_info = "F3"
-		fnc_execute_sql(conn_obj, sql_query, params)
-
-		log_info = "F0"
-
-	except Exception as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_salvar_falha('SQL_SERVER', conn_log, sql_query, params)
-		log_info = "F99"
-
-	finally:
-		fnc_close_local(conn_obj)
-
-	return {"Resultado": "Executado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def main():

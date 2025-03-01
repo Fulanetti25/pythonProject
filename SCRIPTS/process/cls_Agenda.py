@@ -29,7 +29,6 @@ def etl_ExecutaProcesso(processo,proxima_execucao):
             nome_processo = processo['Processo']
             desenhar_tela(term, proxima_execucao:= nome_processo, fake:=True, tempo:=False, executando:=True)
 
-
             func = globals().get(nome_processo)
             if func:
                 resultado = func()

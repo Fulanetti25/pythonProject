@@ -1,0 +1,28 @@
+{
+    "objetos": [
+        {
+            "Nome": "SEARCH_BOX",
+            "Xpath": "//*[@id=\"side\"]/div[1]/div/div[2]/div/div/div[1]/p"
+        },
+        {
+            "Nome": "MESSAGE_BOX",
+            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[2]/div[1]/div[2]/div[1]/p"
+        },
+        {
+            "Nome": "SEND_ARROW",
+            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[2]/div[2]/button/span"
+        },
+        {
+            "Nome": "BIG_ARROW",
+            "Xpath": "//*[@id=\"app\"]/div/div[3]/div/div[2]/div[2]/span/div/div/div/div[2]/div/div[2]/div[2]/div/div/span"
+        },
+        {
+            "Nome": "PLUS_BUTTON",
+            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[1]/div/button/span"
+        },
+        {
+            "Nome": "DOC_OPTION",
+            "Xpath": "//*[@id=\"app\"]/div/span[5]/div/ul/div/div/div[1]/li/div/span"
+        }
+    ]
+}
