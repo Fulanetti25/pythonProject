@@ -18,7 +18,7 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 def prc_executa_whats(numero, mensagem, anexo):
 	log_info = "F1"
 	varl_detail = None
-	conexao = None
+	conn_obj = None
 
 	try:
 		log_info = "F2"
@@ -81,13 +81,24 @@ def fnc_envia_whats(driver, numero, mensagem, anexo):
 			plus_button = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
 			plus_button.click()
 
-			log_info = "F5"
-			objeto = 'DOC_OPTION'
-			mapa_objetos = json_caminho('Json_Mapa_Objetos')
-			dados_objetos = json_dados(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']))
-			xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
-			doc_option = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
-			doc_option.click()
+			nome, extensao = os.path.splitext(anexo)
+			if extensao == '.vcf':
+				log_info = "F5.1"
+				objeto = 'DOC_OPTION'
+				mapa_objetos = json_caminho('Json_Mapa_Objetos')
+				dados_objetos = json_dados(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']))
+				xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+				doc_option = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+				doc_option.click()
+
+			if extensao == '.png':
+				log_info = "F5.2"
+				objeto = 'IMG_OPTION'
+				mapa_objetos = json_caminho('Json_Mapa_Objetos')
+				dados_objetos = json_dados(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']))
+				xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+				img_option = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+				img_option.click()
 
 			time.sleep(5)
 			os.system(f'echo {anexo} | clip')  # Copia o caminho para o clipboard
@@ -96,7 +107,6 @@ def fnc_envia_whats(driver, numero, mensagem, anexo):
 
 		if anexo:
 			log_info = "F6"
-
 			objeto = 'BIG_ARROW'
 			mapa_objetos = json_caminho('Json_Mapa_Objetos')
 			dados_objetos = json_dados(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']))
@@ -339,7 +349,8 @@ def main():
 	varg_erro = None
 	numero = "+5511964821360"
 	mensagem = "Olá! Esta é uma mensagem automática."
-	anexo = r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\contatos\202412 CLI TEIXEIRA.vcf'
+	# anexo = r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\contatos\202412 CLI TEIXEIRA.vcf'
+	anexo = r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\grafico_gantt.png'
 	exec_info += "\tGF\n"
 
 	exec_info += "\t\tMI\n"

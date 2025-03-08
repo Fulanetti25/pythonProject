@@ -8,6 +8,7 @@ import plotly.express as px
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+from SCRIPTS.functions.cls_OutWhatsapp import prc_executa_whats
 
 
 def processar_base():
@@ -150,6 +151,33 @@ def gerar_grafico_gantt():
 	return {"Resultado": str(out_name), 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def enviar_grafico_gantt():
+	log_info = "F1"
+	varl_detail = None
+	caminhos = json_caminho('Imagem_Projetos_Gantt')
+	file_dir = caminhos['Diretorio']
+	file_name = os.path.join(file_dir, caminhos['Arquivo'])
+	numero = "PSM - DESENVOLVIMENTO"
+	mensagem = ("*Bom dia Time DEV!* Esta é uma mensagem automática visando acompanharmos nossas entregas. "
+				"Qualquer alteração dos fatos ou regras, dar-se-á no dia seguinte.")
+	try:
+		log_info = "F2"
+		resultado = prc_executa_whats(numero, mensagem, file_name)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+		# os.remove(file_name)
+
+	return {"Resultado": str(resultado), 'Status_log': log_info, 'Detail_log': varl_detail}
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
@@ -170,6 +198,10 @@ def main():
 		exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
+		resultado3 = enviar_grafico_gantt()
+		exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado3['Detail_log']}\n"
 		exec_info += "\t\tMF\n"
 		varg_erro = False
 

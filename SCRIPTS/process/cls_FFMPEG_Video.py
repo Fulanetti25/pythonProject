@@ -1,3 +1,4 @@
+import moviepy.config as mpy_config
 import winsound
 import traceback
 import inspect
@@ -5,29 +6,55 @@ import logging
 import shutil
 import subprocess
 import os
+from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextClip
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
+# CONFIGURACOES E GLOBAIS
+mpy_config.change_settings({"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"})  # Ajuste o caminho conforme sua instalação
+
+
+#     # IMAGENS
+# image = (
+#     ImageClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\i1.png', duration = 15)
+#     # .resize(.5)
+# )
+#     # AUDIOS
+# audio_intro = (
+#     AudioFileClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\a1.mp3')
+#     .subclip(8,18)
+# )
+# audio_credito = (
+#     AudioFileClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\a1.mp3')
+#     .subclip(38,48)
+# )
+#
+# # PADRONIZAÇÃO DE FORMATOS
+# audio_v1 = video_1.audio
+# audio_v2 = video_2.audio
+# audio_videos = concatenate_audioclips([audio_v1, audio_v2])
+# audio_concatenado = concatenate_audioclips([audio_intro, audio_videos, audio_credito])
+# color_0 = ColorClip(size=texto_intro.size, color=(0, 255, 0), duration=3).set_start(0).set_fps(24)
+# color_1 = ColorClip(size=texto_intro.size, color=(0, 150, 150), duration=3).set_start(3).set_fps(24)
+# color_2 = ColorClip(size=texto_intro.size, color=(0, 0, 255), duration=3).set_start(6).set_fps(24)
+#
+# # COMPOSIÇÕES DE FASES
+# compose_intro = CompositeVideoClip([color_2, color_1, color_0, texto_intro]).set_fps(24)
+# compose_credito = CompositeVideoClip([color_0, color_1, color_2, texto_credito]).set_fps(24)
+#
+# # COMPOSIÇÕES FINAIS
+# compose1 = concatenate_videoclips([video_1,video_2])
+# compose2 = CompositeVideoClip([compose1,image])
+# compose3 = clips_array([[compose2],[video_inferior]])
+# compose4 = concatenate_videoclips([compose_intro,compose3])
+# compose5 = concatenate_videoclips([compose4,compose_credito])
+
+
 def fnc_tempo_para_segundos(tempo_str):
 	h, m, s = map(float, tempo_str.split(':')) if ':' in tempo_str else (0, 0, float(tempo_str))
 	return h * 3600 + m * 60 + s
-
-
-def fnc_cortar_video(video_path, tempo_inicial, tempo_final, output_path):
-	command = [
-		'ffmpeg',
-		'-i', video_path,
-		'-ss', str(tempo_inicial),  # Tempo inicial de corte
-		'-to', str(tempo_final),  # Tempo final de corte
-		'-c:v', 'libx264',  # Usando o codec de vídeo H.264
-		'-c:a', 'aac',  # Usando o codec de áudio AAC
-		'-strict', 'experimental',  # Permite a utilização de codecs experimentais
-		'-y',  # Sobrescreve o arquivo de saída sem perguntar
-		output_path
-	]
-	subprocess.run(command, check=True)
 
 
 def fnc_dividir_lista(video_path, lista):
@@ -44,7 +71,7 @@ def fnc_dividir_lista(video_path, lista):
 		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, output_path)
 
 
-def fnc_dividir_fixo(video_path, output_path, segundos):
+def fnc_dividir_fixo(video_path, output_path, segundos= 10):
 	command_duracao = [
 		'ffmpeg', '-i', video_path,
 		'-f', 'null', '-'
@@ -71,12 +98,43 @@ def fnc_dividir_fixo(video_path, output_path, segundos):
 		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, saida)
 
 
+def fnc_cortar_video(video_path, tempo_inicial, tempo_final, output_path):
+	command = [
+		'ffmpeg',
+		'-i', video_path,
+		'-ss', str(tempo_inicial),  # Tempo inicial de corte
+		'-to', str(tempo_final),  # Tempo final de corte
+		'-c:v', 'libx264',  # Usando o codec de vídeo H.264
+		'-c:a', 'aac',  # Usando o codec de áudio AAC
+		'-strict', 'experimental',  # Permite a utilização de codecs experimentais
+		'-y',  # Sobrescreve o arquivo de saída sem perguntar
+		output_path
+	]
+	subprocess.run(command, check=True)
+
+
 def fnc_buscar_processar(diretorio):
-	for raiz, _, arquivos in os.walk(diretorio):
-		for arquivo in arquivos:
-			if "PROCESSAR_" in arquivo:
-				return os.path.join(raiz, arquivo)
-	return None
+	log_info = "F1"
+	varl_detail = None
+	lista = []
+
+	try:
+		log_info = "F2"
+		for raiz, _, arquivos in os.walk(diretorio):
+			for arquivo in arquivos:
+				if "PROCESSAR_" in arquivo:
+					lista.append(os.path.join(raiz, arquivo))
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": lista, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_buscar_arquivos(diretorio: str, incluir_subpastas: bool = True) -> list:
@@ -212,6 +270,64 @@ def fnc_cortes_preto(arquivo: str):
 	return arquivo_saida
 
 
+def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):
+	log_info = "F1"
+	varl_detail = None
+	arquivo_out = None
+
+	try:
+		log_info = "F2"
+		arquivo_inferior = arquivo.replace('PROCESSAR_', 'INFERIOR_')
+		if not os.path.exists(os.path.join(caminho, arquivo_inferior)):
+			raise FileNotFoundError(f"Arquivo inferior não encontrado: {arquivo_inferior}")
+
+		log_info = "F3"
+		size = (640, 360)
+		video_sup = (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
+		# video_sup = video_sup.subclip(0, 30)  # Flag de testes rápidos
+		num_partes = int(video_sup.duration // parte_duracao) + 1
+		video_inf = (VideoFileClip(os.path.join(caminho, arquivo_inferior)).subclip(0, video_sup.duration).resize(size))
+
+		log_info = "F5"
+		textos_partes = []
+
+		for i in range(num_partes):
+			if i == num_partes - 1:
+				texto_duracao = video_sup.duration - (i * parte_duracao)  # Duração restante no vídeo
+			else:
+				texto_duracao = parte_duracao
+			texto_parte = TextClip(f'parte {i + 1}', color='yellow', fontsize=50, font='Arial', size=(640, 720))
+			texto_parte = (texto_parte.set_duration(texto_duracao)
+						   .set_position(('center', 360 - 50))
+						   .set_start(i * parte_duracao)
+						   .set_end(i * parte_duracao + texto_duracao))
+			textos_partes.append(texto_parte)  # Adiciona o objeto à lista
+
+		log_info = "F6"
+		# Criar o vídeo composto com o vídeo e os textos
+		compose_01 = clips_array([[video_sup], [video_inf]])
+		compose_02 = CompositeVideoClip([compose_01, *textos_partes])  # Adiciona o texto ao vídeo
+
+		log_info = "F7"
+		arquivo_out = 'editado.mp4'
+		compose_02 = compose_02.set_audio(video_sup.audio)  # Atribui o áudio ao final
+		# compose_02.preview()  # Para visualizar o vídeo
+		compose_02.write_videofile(os.path.join(caminho, arquivo_out), fps=24)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+
+	finally:
+		pass
+		# os.remove(file_name)
+
+	return {"Resultado": arquivo_out, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
@@ -220,34 +336,41 @@ def main():
 
 	exec_info += "\tGI\n"
 	varg_erro = None
-	# processo = json_caminho('Json_VideosDrumeibes')
-	processo = json_caminho('Json_VideosFute')
+	lista = []
+	processo = json_caminho('Json_VideosDrumeibes')
+	# processo = json_caminho('Json_VideosFute')
 	diretorio = os.path.join(processo['Diretorio'])
 	exec_info += "\tGF\n"
 
 	exec_info += "\t\tMI\n"
 	try:
-		# resultado = fnc_buscar_processar(diretorio)
-		# fnc_dividir_fixo(os.path.join(mapa_objetos['Diretorio'], arquivo_processar),arquivo_caminho, 15)
-		# Montar inicio, fim e Legendar Video
-		# resultado = fnc_unificar_videos(diretorio)
-		arquivo = os.path.join(diretorio, '20250302_bruto.mp4')
-		resultado = fnc_cortes_preto(arquivo)
-		if resultado:
-			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-			exec_info += "\t\tMF\n"
-			varg_erro = False
-		else:
-			print(f"Processo não executado")
+		lista = fnc_buscar_processar(diretorio)
+		for caminho in lista["Resultado"]:
 
+			# PROCESSOS DRUMEIBES
+			# Montar inicio (3 segundos, apresentação)
+			# Montar final (3 segundos, creditos)
+			# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
+			# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+			resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
+
+			# PROCESSOS FUTE
+			# resultado = fnc_unificar_videos(diretorio)
+			# resultado = fnc_cortes_preto(arquivo)
+
+			if resultado:
+				exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+				exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+				exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+				exec_info += "\t\tMF\n"
+				varg_erro = False
+			else:
+				print(f"Processo não executado")
 
 	except Exception as e:
 		exec_info += "\t\t\tM99\n"
 		exec_info += f"Traceback: {traceback.format_exc()}"
 		varg_erro = True
-		raise
 
 	finally:
 		exec_info += "LF\n"

@@ -29,7 +29,7 @@
       "Dia": "Util",
       "Classe": "cls_GooglePalavras",
       "Nome": "Extração Google Palavras",
-      "Processo": "google_main",
+      "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
     },

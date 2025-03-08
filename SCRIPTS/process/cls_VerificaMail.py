@@ -419,7 +419,7 @@ def main():
                         if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
                             vcard = fnc_gerar_vcard(processed_email["nome"], processed_email["email"], processed_email["telefone"], processed_email["mensagem"]).get("Resultado")
                         if processed_email["telefone"] != "Não identificado":
-                            resultado = prc_executa_whats("PSM - ADMINISTRAÇÃO", email_data["body"].get('Resultado').replace('\t',''), vcard)
+                            resultado = prc_executa_whats("PSM - ADMINISTRAÇÃO", processed_email["mensagem"] + "-" + processed_email["telefone"] + "-" +  processed_email["email"], vcard)
                             exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
                             exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
                             exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
