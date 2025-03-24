@@ -113,7 +113,7 @@ def fnc_cortar_video(video_path, tempo_inicial, tempo_final, output_path):
 	subprocess.run(command, check=True)
 
 
-def fnc_buscar_processar(diretorio):
+def fnc_buscar_processar(diretorio, palavra):
 	log_info = "F1"
 	varl_detail = None
 	lista = []
@@ -122,7 +122,7 @@ def fnc_buscar_processar(diretorio):
 		log_info = "F2"
 		for raiz, _, arquivos in os.walk(diretorio):
 			for arquivo in arquivos:
-				if "PROCESSAR_" in arquivo:
+				if palavra in arquivo:
 					lista.append(os.path.join(raiz, arquivo))
 
 	except Exception as e:
@@ -151,50 +151,45 @@ def fnc_buscar_arquivos(diretorio: str, incluir_subpastas: bool = True) -> list:
 
 
 def fnc_unificar_videos(diretorio: str):
-	arquivos = sorted(fnc_buscar_arquivos(diretorio, incluir_subpastas=True))
-	print(arquivos)
+	subpastas = [pasta.path for pasta in os.scandir(diretorio) if pasta.is_dir()]
+	for subpasta in subpastas:
+		arquivos = sorted(fnc_buscar_arquivos(subpasta, incluir_subpastas=False))
+		videos = [arquivo for arquivo in arquivos if arquivo.lower().endswith(".mp4")]
+		if not videos:
+			print(f"Nenhum vídeo encontrado na subpasta: {subpasta}")
+			continue
 
-	videos = [arquivo for arquivo in arquivos if arquivo.lower().endswith(".mp4")]
+		lista_txt = os.path.join(subpasta, "lista_videos.txt")
+		with open(lista_txt, "w", encoding="utf-8") as f:
+			for video in videos:
+				f.write(f"file '{video.replace('\\', '/')}'\n")
 
-	if not videos:
-		print("Nenhum vídeo encontrado no diretório.")
-		return
+		nome_pasta = os.path.basename(subpasta)
+		arquivo_saida = os.path.join(diretorio, f"{nome_pasta}_BRUTO.mp4")
 
-	lista_txt = os.path.join(diretorio, "lista_videos.txt")
-	with open(lista_txt, "w", encoding="utf-8") as f:
-		for video in videos:
-			# 🔹 Corrigido: Formato correto para FFmpeg
-			f.write(f"file '{video.replace('\\', '/')}'\n")
+		comando = [
+			"ffmpeg", "-f", "concat", "-safe", "0", "-i", lista_txt,
+			"-c", "copy", arquivo_saida, "-y"
+		]
 
-	ultima_subpasta = max([os.path.join(diretorio, subpasta) for subpasta in os.listdir(diretorio)
-						   if os.path.isdir(os.path.join(diretorio, subpasta))], key=os.path.getmtime)
-	nome_pasta = os.path.basename(ultima_subpasta)
-	arquivo_saida = os.path.join(diretorio, f"{nome_pasta}_bruto.mp4")
-
-	comando = [
-		"ffmpeg", "-f", "concat", "-safe", "0", "-i", lista_txt,
-		"-c", "copy", arquivo_saida, "-y"
-	]
-
-	try:
-		cwd = os.path.abspath(diretorio)  # 🔹 Corrigido: Define cwd antes de usá-lo
-		subprocess.run(comando, check=True, cwd=cwd)
-		print(f"Vídeo unificado criado: {arquivo_saida}")
-	except subprocess.CalledProcessError as e:
-		print(f"Erro ao unir os vídeos: {e}")
-
-	os.remove(lista_txt)
-
-	if os.path.exists(arquivo_saida):
-		pass
-		# shutil.rmtree(ultima_subpasta)  # Remove a última pasta e todo o seu conteúdo
-		# print(f"Pasta {ultima_subpasta} removida.")
+		try:
+			subprocess.run(comando, check=True, cwd=os.path.abspath(subpasta))
+			print(f"Vídeo unificado criado: {arquivo_saida}")
+		except subprocess.CalledProcessError as e:
+			print(f"Erro ao unir os vídeos na pasta {subpasta}: {e}")
+		finally:
+			if os.path.exists(lista_txt):
+				os.remove(lista_txt)
+			if os.path.exists(arquivo_saida):
+				shutil.rmtree(subpasta)
+				print(f"Pasta {subpasta} removida.")
 
 
 def fnc_cortes_preto(arquivo: str):
 	# Definindo o nome do arquivo de saída
 	diretorio = os.path.dirname(arquivo)
-	arquivo_saida = os.path.join(diretorio, "20250302_highlights.mp4")
+	nome_base = os.path.basename(arquivo)[:8]
+	arquivo_saida = os.path.join(diretorio, f"{nome_base}_Highlights Sub99.mp4")
 
 	# Passo 1: Detectar os quadros pretos no vídeo
 	comando = [
@@ -337,35 +332,35 @@ def main():
 	exec_info += "\tGI\n"
 	varg_erro = None
 	lista = []
-	processo = json_caminho('Json_VideosDrumeibes')
-	# processo = json_caminho('Json_VideosFute')
-	diretorio = os.path.join(processo['Diretorio'])
+	processo_banda = json_caminho('Json_VideosDrumeibes')
+	processo_futes = json_caminho('Json_VideosFute')
+	diretorio_banda = os.path.join(processo_banda['Diretorio'])
+	diretorio_futes = os.path.join(processo_futes['Diretorio'])
 	exec_info += "\tGF\n"
 
 	exec_info += "\t\tMI\n"
 	try:
-		lista = fnc_buscar_processar(diretorio)
+		# PROCESSOS FUTE
+		resultado = fnc_unificar_videos(diretorio_futes)
+		lista = fnc_buscar_processar(diretorio_futes, '_BRUTO')
 		for caminho in lista["Resultado"]:
+			resultado = fnc_cortes_preto(caminho)
+			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
-			# PROCESSOS DRUMEIBES
-			# Montar inicio (3 segundos, apresentação)
-			# Montar final (3 segundos, creditos)
-			# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
-			# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
-			resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
+		# lista = fnc_buscar_processar(diretorio_banda, 'PROCESSAR_')
+		# for caminho in lista["Resultado"]:
+		# 	pass
+		# 	# PROCESSOS DRUMEIBES
+		# 	# Montar inicio (3 segundos, apresentação)
+		# 	# Montar final (3 segundos, creditos)
+		# 	# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
+		# 	# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+		# 	# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
 
-			# PROCESSOS FUTE
-			# resultado = fnc_unificar_videos(diretorio)
-			# resultado = fnc_cortes_preto(arquivo)
-
-			if resultado:
-				exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-				exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-				exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-				exec_info += "\t\tMF\n"
-				varg_erro = False
-			else:
-				print(f"Processo não executado")
+		exec_info += "\t\tMF\n"
+		varg_erro = False
 
 	except Exception as e:
 		exec_info += "\t\t\tM99\n"

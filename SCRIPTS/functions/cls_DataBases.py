@@ -3,29 +3,41 @@ import logging
 import traceback
 import inspect
 import pymssql
+import mysql.connector
+import pandas as pd
+from sqlalchemy import create_engine
 from decouple import config
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_limpa
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_Logging import main as log_registra
 
 
-server = config('SQL_SERVER')
-database = config('SQL_DATABASE')
+local_server = config('SQL_SERVER')
+local_database = config('SQL_DATABASE')
+local_driver = config('SQL_DRIVER')
+umbler_host = config('UMBLER_SERVER')
+umbler_port = config('UMBLER_PORT')
+umbler_database = config('UMBLER_DATABASE')
+umbler_user = config('UMBLER_USER')
+umbler_password = config('UMBLER_PASS')
 
-
-def prc_executa_db(sql_query, params):
+def prc_executa_local(sql_query, params, resultado):
 	log_info = "F1"
 	varl_detail = None
 	conexao = None
+	dados = None
 
 	try:
 		log_info = "F2"
-		conexao = fnc_connect_local()
+		conexao = fnc_abrir_local()
 		conn_obj = conexao.get("Resultado")
 		conn_log = conexao.get("Detail_log")
 
 		log_info = "F3"
-		fnc_execute_sql(conn_obj, sql_query, params)
+		if resultado == True:
+			dados = fnc_recuperar_local(conn_obj, sql_query, params)
+		else:
+			dados = fnc_executar_local(conn_obj, sql_query, params)
 
 		log_info = "F0"
 
@@ -36,12 +48,73 @@ def prc_executa_db(sql_query, params):
 		log_info = "F99"
 
 	finally:
-		fnc_close_local(conn_obj)
+		fnc_fechar_local(conn_obj)
+
+	return {"Resultado": dados, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def prc_executa_online(sql_query, params, resultado):
+	log_info = "F1"
+	varl_detail = None
+	conexao = None
+	conn_obj = None
+	conn_log = None
+
+	try:
+		log_info = "F2"
+		conexao = fnc_abrir_online()
+		conn_obj = conexao.get("Resultado")
+		conn_log = conexao.get("Detail_log")
+
+		log_info = "F3"
+		if resultado == True:
+			fnc_recuperar_online(conn_obj, sql_query, params)
+		else:
+			fnc_executar_online(conn_obj, sql_query, params)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		fnc_salvar_falha('UMBLER', conn_log, sql_query, params)
+		log_info = "F99"
+
+	finally:
+		if conn_obj:
+			fnc_fechar_online(conn_obj)
 
 	return {"Resultado": "Executado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
+def fnc_recuperar_local(conexao, query, params=None):
+	log_info = "F1"
+	varl_detail = None
+	df = None
 
-def fnc_execute_sql(conexao, query, params=None):
+	try:
+		log_info = "F2"
+		cursor = conexao.cursor()
+		cursor.execute(query, params)
+		columns = [column[0] for column in cursor.description]
+		data = cursor.fetchall()
+		df = pd.DataFrame(data, columns=columns)
+		print(df.head())
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": df, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_executar_local(conexao, query, params=None):
 	log_info = "F1"
 	varl_detail = None
 	result = None  # Vai armazenar o resultado da consulta
@@ -49,7 +122,6 @@ def fnc_execute_sql(conexao, query, params=None):
 	try:
 		log_info = "F2"
 		cursor = conexao.cursor()
-
 		cursor.execute(query, params)
 
 		if query.strip().lower().startswith("select"):
@@ -72,13 +144,66 @@ def fnc_execute_sql(conexao, query, params=None):
 	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_connect_local():
+def fnc_recuperar_online(conexao, query, params=None):
+	log_info = "F1"
+	varl_detail = None
+	df = None
+
+	try:
+		log_info = "F2"
+		cursor = conexao.cursor()
+		cursor.execute(query, params)
+		columns = [column[0] for column in cursor.description]
+		data = cursor.fetchall()
+		df = pd.DataFrame(data, columns=columns)
+		print(df.head())  # Exibir amostra dos dados
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": df, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_executar_online(conexao, query, params=None):
+	log_info = "F1"
+	varl_detail = None
+	result = None
+
+	try:
+		log_info = "F2"
+		cursor = conexao.cursor()
+		cursor.execute(query, params)
+
+		if query.strip().lower().startswith("select"):
+			result = cursor.fetchall()
+		else:
+			conexao.commit()
+			result = cursor.rowcount
+		print(result)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_abrir_local():
 	log_info = "F1"
 	varl_detail = None
 
 	try:
 		log_info = "F2"
-		conn = pymssql.connect(server=server, database=database)
+		conn = pymssql.connect(server=local_server, database=local_database)
 
 		log_info = "F0"
 
@@ -95,7 +220,7 @@ def fnc_connect_local():
 	return {"Resultado": conn, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_close_local(conexao):
+def fnc_fechar_local(conexao):
 	log_info = "F1"
 	varl_detail = None
 
@@ -113,6 +238,45 @@ def fnc_close_local(conexao):
 
 	finally:
 		pass
+
+	return {"Resultado": "Conexão fechada", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_abrir_online():
+	log_info = "F1"
+	varl_detail = None
+
+	try:
+		log_info = "F2"
+		conn = mysql.connector.connect(host=umbler_host, port=umbler_port, database=umbler_database, user=umbler_user, password=umbler_password)
+
+		if conn.is_connected():
+			print("✅ Conexão com MySQL bem-sucedida!")
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": conn, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_fechar_online(conexao):
+	log_info = "F1"
+	varl_detail = None
+
+	try:
+		log_info = "F2"
+		conexao.close()
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
 
 	return {"Resultado": "Conexão fechada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -165,7 +329,7 @@ def fnc_reprocessar_falha():
 		for falha in pilha:
 			query = falha["query"]
 			params = falha["params"]
-			prc_executa_db(query, params)
+			prc_executa_local(query, params, False)
 
 		log_info = "F0"
 
@@ -181,6 +345,27 @@ def fnc_reprocessar_falha():
 			json_limpa(falhas_path)
 
 	return {"Resultado": "Pilha Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_carregar_df_online(df, tabela):
+	log_info = "F1"
+	varl_detail = None
+
+	try:
+		log_info = "F2"
+		engine = create_engine(f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}")
+
+		df.to_sql(tabela, con=engine, if_exists="append", index=False)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": "Dados inseridos", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def main():
@@ -199,11 +384,17 @@ def main():
 		INSERT INTO dbo.PRD_CONTATOMAIL
 		VALUES (GETDATE(), %(nome)s, %(telefone)s, %(email)s, %(assunto)s, %(mensagem)s, %(c_anexos)s, %(tag)s)
 		"""
-		params = {
+		sql_params = {
 			"nome": "nome_teste2", "telefone": "telefone_teste", "email": "email_teste", "assunto": "assunto_teste", "mensagem": "mensagem_teste", "c_anexos": "0", "tag": "TESTE_PYTHON"
 		}
-
-		resultado = prc_executa_db(sql_query, params)
+		sql_query2 = """
+		select * from vactions.users
+		"""
+		sql_params2 = {
+			"nome": "nome_teste2", "telefone": "telefone_teste", "email": "email_teste", "assunto": "assunto_teste", "mensagem": "mensagem_teste", "c_anexos": "0", "tag": "TESTE_PYTHON"
+		}
+		# resultado = prc_executa_local(sql_query, sql_params, False)
+		resultado = prc_executa_online(sql_query2, sql_params2, True)
 		# resultado = fnc_reprocessar_falha()
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"

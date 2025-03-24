@@ -89,7 +89,7 @@ def exibir_texto(term, x, y, texto, estilo=None):
 
 def barra_fake(term, x, y, total, incremento):
     with term.location(x, y):
-        fake = barra_Criar(total=total, cor_barra="blue", cor_fonte="white")
+        fake = barra_Criar(total=total, cor_barra="green", cor_fonte="white")
         for i in range(total):
             barra_Atualizar(fake, incremento=incremento)
             time.sleep(0.1)
@@ -140,7 +140,7 @@ def tela_superior_dir(term, processos):
             nome_formatado = proc['Nome']
             ultimo_log = fn_ultimo_log(proc['Classe'])
             ultimo_log = "" if not ultimo_log else ultimo_log.date()
-            exibir_texto(term, COLUNA_DIR, line, f"{nome_formatado:<40} | Classe: {proc['Classe']:<20} | Horário: {proc['Horario']:<5} " f"| Dia: {proc['Dia']:<10} | Intervalo: {proc['Intervalo'][-3:]} |: {ultimo_log}")
+            exibir_texto(term, COLUNA_DIR, line, f"{nome_formatado:<35} | Classe: {proc['Classe']:<24} | Horário: {proc['Horario']:<5} " f"| Dia: {proc['Dia']:<10} | Intervalo: {proc['Intervalo'][-3:]} |: {ultimo_log}")
             line += 1
 
 
@@ -181,7 +181,7 @@ def tela_inferior_dir(term):
             exibir_texto(term, col_base + i * 15, linha_base, str(valor), estilo=term.bold_white)
 
 
-def desenhar_tela(term, proxima_execucao, processos_filtrados, fake=False, tempo=True, executando = True):
+def desenhar_tela(term, proxima_execucao, processos_filtrados, fake, tempo, executando):
     tela_limpar()
     if executando == True:
         tela_inferior_esq(term)
@@ -196,7 +196,7 @@ def desenhar_tela(term, proxima_execucao, processos_filtrados, fake=False, tempo
         tela_inferior_dir(term)
     if tempo:
         barra_tempo(term, COLUNA_ESQ, LINHA_TEMPORIZADOR+1, 30, 1)
-    if fake:
+    elif fake:
         barra_fake(term, COLUNA_ESQ, LINHA_TEMPORIZADOR+2, 10, 1)
 
 

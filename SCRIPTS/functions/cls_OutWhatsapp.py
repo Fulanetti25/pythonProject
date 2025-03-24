@@ -34,7 +34,7 @@ def prc_executa_whats(numero, mensagem, anexo):
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_salvar_falha('WHATSAPP', conn_log, numero, {mensagem+anexo})
+		fnc_salvar_falha('WHATSAPP', conn_obj, numero, {mensagem+anexo})
 		log_info = "F99"
 
 	finally:
@@ -133,13 +133,6 @@ def fnc_envia_whats(driver, numero, mensagem, anexo):
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail,var_erro=True)
 		log_info = "F99"
 
-		# RECURSO DE BUSCA DE POSSÍVEIS XPATH AUTOMATIZADO
-		# resultado = fnc_mapear_elementos(driver)
-		# lista = resultado['Resultado']
-		# for item in lista:
-		# 	if any('//*[@id="side"]/div[1]/div/div[2]/div/div/div[1]/p' in str(value) for value in item.values()):
-		# 		print(item)
-
 		log_info = "F0"
 
 	finally:
@@ -172,7 +165,6 @@ def fnc_connect_whats():
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail,
 					 var_erro=True)
 		log_info = "F99"
-		raise
 
 	finally:
 		pass
@@ -196,7 +188,6 @@ def fnc_close_whats(driver):
 		varl_detail = f"{log_info}, {e}"
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	finally:
 		pass
@@ -230,7 +221,6 @@ def fnc_salvar_falha(server, conn_log, sql_query, params):
 		varl_detail = f"{log_info}, {e}"
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	finally:
 		pass
@@ -260,7 +250,6 @@ def fnc_reprocessar_falha():
 		varl_detail = f"{log_info}, {e}"
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
 
 	finally:
 		if log_info == "F0":
@@ -308,36 +297,6 @@ def fnc_get_element_xpath(driver, element):
 		"return absoluteXPath(arguments[0]);", element)
 	return xpath
 
-
-def fnc_mapear_elementos(driver):
-	log_info = "F1"
-	varl_detail = None
-	elements = driver.find_elements(By.XPATH, "//*")
-
-	mapping = []
-	for elem in elements:
-		try:
-			xpath = fnc_get_element_xpath(driver, elem)
-			object_name = elem.get_attribute("name") or elem.tag_name
-			object_type = 'NAME' if elem.get_attribute("name") else 'TAG'
-			text = elem.text.strip()
-			aria_label = elem.get_attribute("aria-label")
-			classe = elem.get_attribute("class")
-			placeholder = elem.get_attribute("placeholder")
-
-			mapping.append({
-				"object_name": object_name,
-				"object_type": object_type,
-				"xpath": xpath,
-				"text": text,
-				"aria_label": aria_label,
-				"class": classe,
-				"placeholder": placeholder
-			})
-		except Exception as e:
-			continue
-
-	return {"Resultado": mapping, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))

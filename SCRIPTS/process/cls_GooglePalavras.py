@@ -3,6 +3,7 @@ import os
 import logging
 import traceback
 import inspect
+import time
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -20,11 +21,14 @@ def ExtrairPalavras(palavra = 'planilha+personalizada'):
 	session = requests.Session()
 	session.headers.update(headers)
 	response = requests.get('https://www.google.com/search?q=' + palavra, headers=headers)
+
 	soup = BeautifulSoup(response.content, 'html.parser')
 	#session.cookies.clear()
 
 	texto_pagina = soup.get_text(separator='\n')
 	linhas = texto_pagina.split('\n')
+	print(linhas)
+	breakpoint()
 
 	df_temp = pd.DataFrame()
 	df = pd.DataFrame(linhas, columns=['Texto'])

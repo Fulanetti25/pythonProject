@@ -37,12 +37,23 @@
       "Horario": "07:30",
       "Frequencia": "Diario",
       "Intervalo": "N/A",
-      "Dia": "All",
+      "Dia": "Util",
       "Classe": "cls_GanttProjetos",
       "Nome": "Relatório Gantt de Projetos",
       "Processo": "gantt_main",
       "Predecessor": "cls_Exporta",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de projetos em andamento."
+    },
+    {
+      "Horario": "07:10",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_AtualizarFontesLocal",
+      "Nome": "Atualizar fontes de dados",
+      "Processo": "fontes_main",
+      "Predecessor": "N/A",
+      "Descricao": "Atualizar as fontes no banco de dados local."
     },
     {
       "Horario": "07:10",

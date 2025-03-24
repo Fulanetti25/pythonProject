@@ -19,7 +19,7 @@ from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_OutWhatsapp import prc_executa_whats
 from SCRIPTS.functions.cls_CriaVcard import fnc_gerar_vcard
-from SCRIPTS.functions.cls_DataBases import prc_executa_db
+from SCRIPTS.functions.cls_DataBases import prc_executa_local
 
 
 IMAP_SERVER = config('IMAP_SERVER')
@@ -440,7 +440,7 @@ def main():
                 params = {
                     "nome": processed_email["nome"][:70], "telefone": processed_email["telefone"][:70], "email": processed_email["email"][:70], "assunto": processed_email["assunto"][:50], "mensagem": processed_email["mensagem"][:8000], "c_anexos": processed_email["c_anexos"], "tag": pasta
                 }
-                prc_executa_db(sql_query, params)
+                prc_executa_local(sql_query, params, False)
                 prc_move_email(mail, email_data['message_id'], pasta)
         else:
             exec_info += "\t\tMF\n"
