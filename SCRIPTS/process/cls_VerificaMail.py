@@ -11,7 +11,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import message_from_bytes, policy
 from bs4 import BeautifulSoup
-from email.header import decode_header
 from datetime import datetime
 from decouple import config
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
@@ -108,11 +107,6 @@ def prc_check_all_emails(mail):
                         "assunto": assunto,
                         "body": body or "Corpo vazio",
                         "message_id": message_id
-                        # "nome": nome,
-                        # "telefone": telefone_match.group(0) if telefone_match else "Não identificado",
-                        # "email": email_match.group(0) if email_match else "Não identificado",
-                        # "mensagem": mensagem,
-                        # "c_anexos": num_anexos
                     })
 
         log_info = "F0"
@@ -161,6 +155,24 @@ def fnc_decode_payload(payload):
     return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def decodificar_nome(email_from):
+    try:
+        decoded_parts = decode_header(email_from)
+        sender = "".join(
+            part.decode(encoding or "utf-8", errors="replace") if isinstance(part, bytes) else part
+            for part, encoding in decoded_parts
+        )
+
+        nome = sender.split("<")[0].strip() if "<" in sender else sender.strip()
+        nome = nome.replace('"', '')
+
+        return datetime.now().strftime("%Y%m%d") + " CLI " + nome
+
+    except Exception as e:
+        print(f"❌ Erro ao decodificar nome: {e}")
+        return "Desconhecido"
+
+
 def prc_process_email(msg_data):
     log_info = "F1"
     varl_detail = None
@@ -168,6 +180,7 @@ def prc_process_email(msg_data):
     email_match = None
     telefone_match = None
     mensagem = None
+    c_anexos = None
     email_result = None  # Variável para armazenar o resultado final do e-mail
 
     try:
@@ -181,9 +194,7 @@ def prc_process_email(msg_data):
                 sender = str(from_field)
             else:
                 sender = from_field
-            nome = sender.split("<")[0].strip() if "<" in sender else sender.strip()
-            nome = nome.replace('"', '')
-            nome = datetime.now().strftime("%Y%m%d") + " CLI " + nome
+            nome = decodificar_nome(sender)
 
         # Processar o corpo do e-mail
         body = msg_data.get("body", {}).get("Resultado", "")
@@ -433,18 +444,18 @@ def main():
                 else:
                     mail_tag = 'OUTROS'
                 pasta = select_case_pasta(mail_tag)
+                email_date = datetime.now()
                 sql_query = """
                 INSERT INTO dbo.PRD_CONTATOMAIL
-                VALUES (GETDATE(), %(nome)s, %(telefone)s, %(email)s, %(assunto)s, %(mensagem)s, %(c_anexos)s, %(tag)s)
+                VALUES (%(email_date)s, %(nome)s, %(telefone)s, %(email)s, %(assunto)s, %(mensagem)s, %(c_anexos)s, %(tag)s)
                 """
                 params = {
-                    "nome": processed_email["nome"][:70], "telefone": processed_email["telefone"][:70], "email": processed_email["email"][:70], "assunto": processed_email["assunto"][:50], "mensagem": processed_email["mensagem"][:8000], "c_anexos": processed_email["c_anexos"], "tag": pasta
+                    "email_date": email_date, "nome": processed_email["nome"][:70], "telefone": processed_email["telefone"][:70], "email": processed_email["email"][:70], "assunto": processed_email["assunto"][:50], "mensagem": processed_email["mensagem"][:8000], "c_anexos": processed_email["c_anexos"], "tag": pasta
                 }
                 prc_executa_local(sql_query, params, False)
                 prc_move_email(mail, email_data['message_id'], pasta)
-        else:
-            exec_info += "\t\tMF\n"
-            varg_erro = False
+        exec_info += "\t\tMF\n"
+        varg_erro = False
 
     except Exception as e:
         exec_info += "\t\t\tM99\n"
@@ -453,7 +464,8 @@ def main():
 
     finally:
         exec_info += "LF\n"
-        mail.logout()
+        if mail:
+            mail.logout()
         log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
         logging.shutdown()
 
