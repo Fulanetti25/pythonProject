@@ -1,0 +1,37 @@
+{
+    "objetos": [
+        {
+            "Nome": "GRUPO_SALDO",
+            "Descrição": "Imagem do grupo onde sera coletado o saldo atualizado",
+            "Xpath": "//*[@id='balance']/div"
+        },
+        {
+            "Nome": "SALDO",
+            "Xpath": "//*[@id='balance']/div/p"
+        },
+        {
+            "Nome": "MOEDA",
+            "Xpath": "//*[@id='balance']/div/svg/path[1]"
+        },
+        {
+            "Nome": "GRUPO_ESCOLHA",
+            "Xpath": "//*[@id='game-coinflip']/div/div[1]/div[2]/div[1]/div/div[1]/div[2]/div[2]"
+        },
+        {
+            "Nome": "ESCOLHA_TAILS",
+            "Xpath": "//*[@id='game-coinflip']/div/div[1]/div[2]/div[1]/div/div[1]/div[2]/div[2]/button[1]"
+        },
+        {
+            "Nome": "ESCOLHA_HEAD",
+            "Xpath": "//*[@id='game-coinflip']/div/div[1]/div[2]/div[1]/div/div[1]/div[2]/div[2]/button[2]"
+        },
+        {
+            "Nome": "GRUPO_MY_GAMES",
+            "Xpath": "//*[@id='game-coinflip']/div/div[1]/div[2]/div[2]/div[1]"
+        },
+        {
+            "Nome": "IMG_OPTION",
+            "Xpath": "//*[@id='app']/div/span[5]/div/ul/div/div/div[2]/li/div"
+        }
+    ]
+}

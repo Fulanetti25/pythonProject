@@ -262,7 +262,7 @@ def fnc_cortes_preto(arquivo: str):
 	os.remove(lista_cortes_txt)
 	print("Arquivos temporários removidos.")
 
-	return arquivo_saida
+	return {"Resultado": arquivo_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):

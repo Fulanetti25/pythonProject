@@ -163,6 +163,7 @@ def fnc_executar_modificacao(conexao, query, params=None):
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
+		fnc_salvar_falha('SQL_SERVER', conexao, query, params)
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
 
@@ -194,6 +195,7 @@ def fnc_executar_online(conexao, query, params=None):
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
+		fnc_salvar_falha('UMBLER', conexao, query, params)
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
 		raise
