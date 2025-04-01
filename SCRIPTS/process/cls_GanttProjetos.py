@@ -174,7 +174,7 @@ def enviar_grafico_gantt():
 
 	finally:
 		pass
-		# os.remove(file_name)
+		os.remove(file_name)
 
 	return {"Resultado": str(resultado), 'Status_log': log_info, 'Detail_log': varl_detail}
 

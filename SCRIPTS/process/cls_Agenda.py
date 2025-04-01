@@ -94,7 +94,7 @@ def main():
                                 exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
                                 exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
                                 exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-                    # desenhar_tela(term, proxima_execucao, processos_filtrados, False, True, False)
+                    desenhar_tela(term, proxima_execucao, processos_filtrados, False, True, False)
                     varg_erro = False
                 else:
                     print(f"Fora do horário permitido ({dia_semana}, das {horarios_filtrados[0]["HorarioMinimo"]} as {horarios_filtrados[0]["HorarioMaximo"]}). \nAguardando próximo intervalo.")
@@ -109,9 +109,7 @@ def main():
                         if processo["Frequencia"] == "Diario":
                             if processo['Predecessor'] != 'N/A':
                                 ultimo_predecessor = fn_ultimo_log(processo['Predecessor'])
-                                print('Predecessor:', ultimo_predecessor.date(), ' Atual:', horario_atual.date())
                                 if ultimo_predecessor.date() == horario_atual.date():
-                                    print('Data é igual, vai ocorrer reagendamento')
                                     if ultimo.date() != horario_atual.date():
                                         while horario_processo <= horario_atual:
                                             horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))

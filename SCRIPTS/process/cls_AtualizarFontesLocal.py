@@ -62,6 +62,15 @@ def main():
         exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
         exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"
         exec_info += f"\t\t\t\tDetail: {resultado3['Detail_log']}\n"
+        resultado4 = fnc_rodar_cmd("EXEC dbo.PRC_TAB_PESQ_DEV")
+        exec_info += f"\t\t\t\tResultado: {resultado4['Resultado']}\n"
+        exec_info += f"\t\t\t\tStatus: {resultado4['Status_log']}\n"
+        exec_info += f"\t\t\t\tDetail: {resultado4['Detail_log']}\n"
+        exec_info += "\t\tMF\n"
+        resultado5 = fnc_rodar_cmd("EXEC dbo.PRC_TAB_PROJETOS")
+        exec_info += f"\t\t\t\tResultado: {resultado5['Resultado']}\n"
+        exec_info += f"\t\t\t\tStatus: {resultado5['Status_log']}\n"
+        exec_info += f"\t\t\t\tDetail: {resultado5['Detail_log']}\n"
         exec_info += "\t\tMF\n"
 
     except Exception as e:

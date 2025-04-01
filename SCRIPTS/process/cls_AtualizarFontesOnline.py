@@ -8,6 +8,31 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_DataBases import prc_executa_local, prc_executa_online
 
 
+def fnc_calcula_diferenca(consulta1, consulta2):
+    log_info = "F1"
+    varl_detail = None
+
+    try:
+        log_info = "F2"
+        contagem1 = prc_executa_local(consulta1, None, False)
+        contagem2 = prc_executa_online(consulta2, None, False)
+        qtd1 = int(contagem1['Resultado']['Resultado'])
+        qtd2 = int(contagem2['Resultado']['Resultado'])
+        diferenca = qtd1 - qtd2
+
+        log_info = "F0"
+
+    except Exception as e:
+        varl_detail = f"Erro na etapa {log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
+
+    finally:
+        pass
+
+    return {"Resultado": diferenca, 'Status_log': log_info, 'Detail_log': varl_detail}
+
 def main():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
@@ -19,16 +44,13 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
-        consulta1 = "SELECT * FROM dbo.PRD_DEV"
-        consulta2 = "SELECT * from vactions.PRD_DEV"
-        resultado1 = prc_executa_local(consulta1, None, False)
-        resultado2 = prc_executa_online(consulta2, None, False)
-        qtd1 = int(resultado1['Resultado']['Resultado'])
-        qtd2 = int(resultado2['Resultado']['Resultado'])
-        diferenca = qtd1 - qtd2
-        print(f"DIFFERENCE: {diferenca} linhas")
+        # resultado = fnc_calcula_diferenca("SELECT * FROM dbo.PRD_CAD_DEV","SELECT * from vactions.PRD_DEV")
+        resultado = fnc_calcula_diferenca("SELECT * FROM dbo.PRD_PESQ_CLI", "SELECT * from vactions.PRD_PESQ_CLI")
+        exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+        exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+        exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
-        # if diferenca > 0:
+        # if {resultado['Resultado'] > 0:
         #     retorno1 = prc_executa_local(consulta1, None, True)
         #     df1 = retorno1['Resultado']['Resultado']
         #
