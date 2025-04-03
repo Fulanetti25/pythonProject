@@ -10,7 +10,7 @@ from SCRIPTS.functions.cls_CarregaJson import json_caminho
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
-def fnc_LimparPesquisas():
+def prc_LimparPesquisas():
 	log_info = "F1"
 	varl_detail = None
 	caminhos = json_caminho("Base_Pesquisas_Google")
@@ -40,7 +40,7 @@ def fnc_LimparPesquisas():
 	return {"Resultado": "Higienizado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_LimparLogs():
+def prc_LimparLogs():
 	log_info = "F1"
 	varl_detail = None
 	caminhos = json_caminho("Log_Acompanhamento")
@@ -94,11 +94,11 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado1 = fnc_LimparPesquisas()
+		resultado1 = prc_LimparPesquisas()
 		exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
-		resultado2 = fnc_LimparLogs()
+		resultado2 = prc_LimparLogs()
 		exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"

@@ -42,6 +42,9 @@ def main():
     exec_info += "\t\tMI\n"
     try:
         resultado = fnc_teste('Teste')
+        exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+        exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+        exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
         exec_info += "\t\tMF\n"
 
     except Exception as e:

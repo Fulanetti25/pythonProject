@@ -1,18 +1,28 @@
-# Let's calculate the number of tokens used in the current conversation.
-import tst_openai
+import requests
+import json
+from decouple import config
+import openai
 
-# Assuming we can access the context history
-conversation = [
-    {"role": "system", "content": "You are ChatGPT."},
-    {"role": "user", "content": "...."},  # Include full conversation history up to now.
-]
 
-# Calculate tokens for a request
-response = openai.Completion.create(
-    model="gpt-4",
-    messages=conversation,
-    max_tokens=0  # Do not generate a response, just count tokens
-)
+api_key = config('DANILO_GPT_API')
 
-tokens_used = response["usage"]["total_tokens"]
-tokens_used
+
+headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+# Modelo get para recuperar os modelos de chatGPT disponíveis.
+# link = "https://api.openai.com/v1/models"
+# requisicao = requests.get(link,headers=headers)
+# print(requisicao)
+# print(requisicao.text)
+
+link = "https://api.openai.com/v1/chat/completions"
+body = {
+    "model":"gpt-3.5-turbo",
+    "messages": [{"role":"user","content": "Quem é o descobridor dos sete mares?"}]
+}
+body = json.dumps(body)
+requisicao = requests.post(link,headers=headers, data=body)
+
+resposta = requisicao.json()
+print(resposta)
+mensagem = resposta["choices"][0]["message"]["content"]
+print(mensagem)

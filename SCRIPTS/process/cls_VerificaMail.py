@@ -452,7 +452,7 @@ def main():
                 params = {
                     "email_date": email_date, "nome": processed_email["nome"][:70], "telefone": processed_email["telefone"][:70], "email": processed_email["email"][:70], "assunto": processed_email["assunto"][:50], "mensagem": processed_email["mensagem"][:8000], "c_anexos": processed_email["c_anexos"], "tag": pasta
                 }
-                prc_executa_local(sql_query, params, False)
+                prc_executa_local(sql_query, params, 'INSERT')
                 prc_move_email(mail, email_data['message_id'], pasta)
         exec_info += "\t\tMF\n"
         varg_erro = False

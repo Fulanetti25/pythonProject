@@ -22,7 +22,7 @@ umbler_user = config('UMBLER_USER')
 umbler_password = config('UMBLER_PASS')
 
 
-def prc_executa_local(sql_query, params, resultado):
+def prc_executa_local(sql_query, params, modo):
 	log_info = "F1"
 	varl_detail = None
 	conexao = None
@@ -35,13 +35,16 @@ def prc_executa_local(sql_query, params, resultado):
 		conn_log = conexao.get("Detail_log")
 
 		log_info = "F3"
-		if sql_query.strip().lower().startswith("select"):
-			if resultado == True:
-				retorno = fnc_recuperar_dados(conn_obj, sql_query, params)
-			else:
-				retorno = fnc_consultar_contagem(conn_obj, sql_query, params)
-		elif sql_query.strip().lower().startswith(("insert", "delete")):
+		if modo == 'COUNT':
+			retorno = fnc_consultar_contagem(conn_obj, sql_query, params)
+		elif modo == 'SELECT':
+			retorno = fnc_recuperar_dados(conn_obj, sql_query, params)
+		elif modo == 'INSERT':
 			retorno = fnc_executar_modificacao(conn_obj, sql_query, params)
+		elif modo == 'DELETE':
+			pass
+		elif modo == 'UPDATE':
+			pass
 
 		log_info = "F0"
 
@@ -57,7 +60,7 @@ def prc_executa_local(sql_query, params, resultado):
 	return {"Resultado": retorno, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def prc_executa_online(sql_query, params, resultado):
+def prc_executa_online(sql_query, params, modo):
 	log_info = "F1"
 	varl_detail = None
 	conexao = None
@@ -72,13 +75,16 @@ def prc_executa_online(sql_query, params, resultado):
 		conn_log = conexao.get("Detail_log")
 
 		log_info = "F3"
-		if sql_query.strip().lower().startswith("select"):
-			if resultado == True:
-				retorno = fnc_recuperar_dados(conn_obj, sql_query, params)
-			else:
-				retorno = fnc_consultar_contagem(conn_obj, sql_query, params)
-		elif sql_query.strip().lower().startswith(("insert", "delete")):
+		if modo == 'COUNT':
+			retorno = fnc_consultar_contagem(conn_obj, sql_query, params)
+		elif modo == 'SELECT':
+			retorno = fnc_recuperar_dados(conn_obj, sql_query, params)
+		elif modo == 'INSERT':
 			retorno = fnc_executar_modificacao(conn_obj, sql_query, params)
+		elif modo == 'DELETE':
+			pass
+		elif modo == 'UPDATE':
+			pass
 
 		log_info = "F0"
 
@@ -103,11 +109,22 @@ def fnc_recuperar_dados(conexao, query, params=None):
 
 	try:
 		log_info = "F2"
+		query = "SELECT * FROM " + query.strip()
 		cursor = conexao.cursor()
 		cursor.execute(query, params or ())
+
 		columns = [column[0] for column in cursor.description]
 		data = cursor.fetchall()
 		df = pd.DataFrame(data, columns=columns)
+
+		if not df.empty:
+			primeira_coluna = df.columns[0]
+			try:
+				df[primeira_coluna] = pd.to_datetime(df[primeira_coluna], errors='coerce')
+				if df[primeira_coluna].notna().all():  # Se todos os valores forem datas válidas
+					df = df.sort_values(by=primeira_coluna, ascending=True)
+			except Exception:
+				pass
 
 		log_info = "F0"
 
@@ -122,14 +139,20 @@ def fnc_recuperar_dados(conexao, query, params=None):
 def fnc_consultar_contagem(conexao, query, params=None):
 	log_info = "F1"
 	varl_detail = None
-	linhas = None
+	linhas = 0
 
 	try:
 		log_info = "F2"
+		query = "SELECT COUNT(1) FROM " + query.strip()
 		cursor = conexao.cursor()
 		cursor.execute(query, params or ())
 
-		linhas = len(cursor.fetchall())
+		resultado = cursor.fetchone()
+		if resultado is None:
+			linhas = 0  # Se não houver resultado, retorna 0
+			varl_detail = f"{log_info}, Nenhum resultado encontrado para a consulta."
+		else:
+			linhas = resultado[0]  # Pega o valor da contagem
 
 		log_info = "F0"
 

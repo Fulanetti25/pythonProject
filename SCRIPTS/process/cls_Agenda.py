@@ -13,8 +13,11 @@ from SCRIPTS.process.cls_Exporta import main as exporta_main
 from SCRIPTS.process.cls_GooglePalavras import main as google_main
 from SCRIPTS.process.cls_VerificaMail import main as leads_main
 from SCRIPTS.process.cls_GanttProjetos import main as gantt_main
-from SCRIPTS.process.cls_LimpaLogs import main as logs_main
-from SCRIPTS.process.cls_AtualizarFontesLocal import main as fontes_main
+from SCRIPTS.process.cls_LimpaLogs import main as limpeza_logs
+from SCRIPTS.process.cls_AtualizaFonteLocal import main as fontes_local
+from SCRIPTS.process.cls_AtualizaFonteOnline import main as fontes_online
+from SCRIPTS.process.cls_LimpaGoogleDrive import main as limpeza_drive
+
 
 def etl_VerificaAgendamento(processo, horario_atual):
     return processo['Horario'] == horario_atual.strftime("%H:%M")

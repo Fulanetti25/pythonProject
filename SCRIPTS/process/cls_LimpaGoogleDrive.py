@@ -7,10 +7,11 @@ from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
-def listar_maiores_arquivos(drive, top_n):
+def prc_listar_maiores_arquivos(drive, top_n):
     log_info = "F1"
     varl_detail = None
     arquivos = []
+    contagem_por_pasta = {}
 
     try:
         log_info = "F2"
@@ -19,11 +20,19 @@ def listar_maiores_arquivos(drive, top_n):
                 if file.lower() != "desktop.ini":
                     caminho_completo = os.path.join(root, file)
                     tamanho = os.path.getsize(caminho_completo)
-                    data_modificacao = os.path.getmtime(caminho_completo)
-                    arquivos.append((file, tamanho, caminho_completo, data_modificacao))
+                    arquivos.append((tamanho, caminho_completo))
 
-        arquivos.sort(key=lambda x: x[1], reverse=True)
+        # Seleciona os top_n arquivos maiores
+        arquivos.sort(reverse=True, key=lambda x: x[0])
         arquivos = arquivos[:top_n]
+
+        # Mapeia a contagem de arquivos no 4º nível
+        for _, caminho in arquivos:
+            partes = caminho[len(drive):].split(os.sep)
+            if len(partes) >= 4:
+                pasta_nivel_4 = os.path.join(drive, *partes[:4])
+                contagem_por_pasta[pasta_nivel_4] = contagem_por_pasta.get(pasta_nivel_4, 0) + 1
+
         log_info = "F0"
 
     except Exception as e:
@@ -32,10 +41,10 @@ def listar_maiores_arquivos(drive, top_n):
         log_info = "F99"
         raise
 
-    return {"Resultado": arquivos, 'Status_log': log_info, 'Detail_log': varl_detail}
+    return {"Resultado": contagem_por_pasta, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def excluir_arquivos_antigos(drive):
+def prc_excluir_arquivos_antigos(drive):
     log_info = "F1"
     varl_detail = None
     agora = time.time()
@@ -76,7 +85,7 @@ def excluir_arquivos_antigos(drive):
     return {"Resultado": contagem_excluidos, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def excluir_pastas_vazias(drive):
+def prc_excluir_pastas_vazias(drive):
     log_info = "F1"
     varl_detail = None
     pastas_excluidas = 0
@@ -111,19 +120,20 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
-        resultado1 = excluir_arquivos_antigos('G:\\Meu Drive\\PSM\\03 - DESENVOLVIMENTO\\DEV\\')
+        resultado1 = prc_excluir_arquivos_antigos('G:\\Meu Drive\\PSM\\03 - DESENVOLVIMENTO\\DEV\\')
         exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
         exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
         exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
 
-        resultado2 = excluir_pastas_vazias('G:\\Meu Drive\\PSM\\03 - DESENVOLVIMENTO\\DEV\\')
+        resultado2 = prc_excluir_pastas_vazias('G:\\Meu Drive\\PSM\\03 - DESENVOLVIMENTO\\DEV\\')
         exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
         exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
         exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
 
-        resultado = listar_maiores_arquivos('G:\\',100)
-        for arquivo in resultado["Resultado"]:
-            print(f"Nome: {arquivo[0]}, Tamanho: {arquivo[1]} bytes, Caminho: {arquivo[2]}")
+        resultado = prc_listar_maiores_arquivos('G:\\', 100)
+        for pasta, qtd in resultado["Resultado"].items():
+            exec_info += f"\t\t\t\t{pasta} = {qtd} arquivos\n"
+
         exec_info += "\t\tMF\n"
 
     except Exception as e:

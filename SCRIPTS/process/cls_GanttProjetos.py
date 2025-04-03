@@ -34,7 +34,7 @@ def processar_base():
 			 'PROJ_VALOR', 'FIN_PAGO']]
 		df_filtrado = df_selecionado[
 			(df_selecionado['PROJ_STATUS'] == '2-DEV_ANDAMENTO') | (df_selecionado['PROJ_STATUS'] == '4-CLI_GARANTIA')]
-		df_filtrado['DEV_NOME'] = df_filtrado['DEV_NOME'].apply(lambda x: ' '.join(x.split()[:2]))
+		df_filtrado['DEV_NOME'] = df_filtrado['DEV_NOME'].fillna('').apply(lambda x: ' '.join(x.split()[:2]))
 		df_filtrado['PROJ_VALOR'] = pd.to_numeric(df_filtrado['PROJ_VALOR'], errors='coerce')
 		df_filtrado['FIN_PAGO'] = pd.to_numeric(df_filtrado['FIN_PAGO'], errors='coerce')
 		df_filtrado['PROJ_PRAZO'] = pd.to_numeric(df_filtrado['PROJ_PRAZO'], errors='coerce')
@@ -96,7 +96,7 @@ def gerar_grafico_gantt():
 
 		log_info = "F3"
 		df['EIXO'] = df.index.astype(str) + " | " + df['DEV_NOME'] + "/ " + df['CLI_NOME'] + " / " + df['PROJ_STATUS']
-		df['EIXO'] = df['EIXO'].apply(lambda x: x.replace("ATRASO", "<b>ATRASO</b>"))
+		df['EIXO'] = df['EIXO'].fillna('').astype(str).apply(lambda x: x.replace("ATRASO", "<b>ATRASO</b>"))
 		df['ROTULO'] = pd.to_datetime(df['DATA_ESTIMADA_FINAL'], errors='coerce').dt.strftime('%d/%b').str.lower() + " - R$ " + df['VALOR_PENDENTE'].round(2).astype(str)
 
 		df_blue = df.copy()

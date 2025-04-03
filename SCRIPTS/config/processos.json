@@ -49,11 +49,22 @@
       "Frequencia": "Diario",
       "Intervalo": "N/A",
       "Dia": "All",
-      "Classe": "cls_AtualizarFontesLocal",
+      "Classe": "cls_AtualizaFonteLocal",
       "Nome": "Atualizar fontes de dados",
-      "Processo": "fontes_main",
+      "Processo": "fontes_local",
       "Predecessor": "N/A",
       "Descricao": "Atualizar as fontes no banco de dados local."
+    },
+    {
+      "Horario": "10:10",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_AtualizaFonteOnline",
+      "Nome": "Atualizar fontes de dados do Umbler",
+      "Processo": "fontes_online",
+      "Predecessor": "N/A",
+      "Descricao": "Atualizar as fontes no banco de dados online."
     },
     {
       "Horario": "07:10",
@@ -136,10 +147,10 @@
       "Horario": "08:00",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "All",
-      "Classe": "N/A",
-      "Nome": "Limpeza de Drive",
-      "Processo": "N/A",
+      "Dia": "Thursday",
+      "Classe": "cls_LimpaGoogleDrive",
+      "Nome": "Limpeza do Google Drive",
+      "Processo": "limpeza_drive",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
     },
@@ -150,7 +161,7 @@
       "Dia": "All",
       "Classe": "cls_LimpaLogs",
       "Nome": "Limpeza de Logs",
-      "Processo": "logs_main",
+      "Processo": "limpeza_logs",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
     }
