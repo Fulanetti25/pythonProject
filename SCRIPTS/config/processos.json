@@ -164,6 +164,17 @@
       "Processo": "limpeza_logs",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
+    },
+    {
+      "Horario": "11:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Sunday",
+      "Classe": "cls_FFMPEG_Video",
+      "Nome": "Processamento dos Videos",
+      "Processo": "processa_videos",
+      "Predecessor": "N/A",
+      "Descricao": "Processar automaticamente videos do FUTE e DRUMEIBES"
     }
   ]
 }

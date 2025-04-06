@@ -343,21 +343,43 @@ def main():
 		# PROCESSOS FUTE
 		resultado = fnc_unificar_videos(diretorio_futes)
 		lista = fnc_buscar_processar(diretorio_futes, '_BRUTO')
-		for caminho in lista["Resultado"]:
-			resultado = fnc_cortes_preto(caminho)
-			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+		if lista["Resultado"]:
+			exec_info += f"\t\t\t\tFUTE COM Arquivos a processar:\n"
+			for caminho in lista["Resultado"]:
+				resultado = fnc_cortes_preto(caminho)
+				exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+				exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+				exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+		else:
+			exec_info += f"\t\t\t\tFUTE SEM Arquivos a processar.\n"
 
-		# lista = fnc_buscar_processar(diretorio_banda, 'PROCESSAR_')
-		# for caminho in lista["Resultado"]:
-		# 	pass
-		# 	# PROCESSOS DRUMEIBES
-		# 	# Montar inicio (3 segundos, apresentação)
-		# 	# Montar final (3 segundos, creditos)
-		# 	# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
-		# 	# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
-		# 	# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
+		# PROCESSOS DRUMEIBES
+		lista = fnc_buscar_processar(diretorio_banda, 'DRUMEIBES')
+		if lista["Resultado"]:
+			exec_info += f"\t\t\t\tDRUMEIBES COM Arquivos a processar:\n"
+			for caminho in lista["Resultado"]:
+				caminho_arquivo = os.path.dirname(caminho)
+				nome_arquivo = os.path.basename(caminho)
+				nome_inferior = nome_arquivo.replace('DRUMEIBES','INFERIOR')
+				nome_lrc = os.path.splitext(nome_arquivo.replace('DRUMEIBES','LEGENDA'))[0] + '.lrc'
+				nome_intro = "" # Montar inicio (3 segundos, apresentação)
+				nome_final = "" # Montar final (3 segundos, creditos)
+				if (    	os.path.exists(os.path.join(caminho_arquivo, nome_arquivo))
+						and os.path.exists(os.path.join(caminho_arquivo, nome_inferior))
+						and os.path.exists(os.path.join(caminho_arquivo, nome_lrc))
+						and os.path.exists(os.path.join(caminho_arquivo, nome_intro))
+						and os.path.exists(os.path.join(caminho_arquivo, nome_final))
+				):
+					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
+					# ORIGEM DAS INFORMAÇÕES - GOOGLE SHEETS
+					# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
+					# Inserir as legendas da musica para cantar com os videos
+					# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+					# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
+				else:
+					exec_info += f"\t\t\t\t{nome_arquivo} COM ARQUIVOS PENDENTES:\n"
+		else:
+			exec_info += f"\t\t\t\tDRUMEIBES SEM Arquivos a processar:\n"
 
 		exec_info += "\t\tMF\n"
 		varg_erro = False

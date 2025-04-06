@@ -91,14 +91,15 @@ def prc_executa_online(sql_query, params, modo):
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_salvar_falha('UMBLER', conn_log, sql_query, params)
+		if modo not in ['SELECT', 'COUNT']:
+			fnc_salvar_falha('UMBLER', conn_log, sql_query, params)
 		log_info = "F99"
 
 	finally:
 		if conn_obj:
 			fnc_fechar_online(conn_obj)
 
-	return {"Resultado": retorno, 'Status_log': log_info, 'Detail_log': varl_detail}
+	return {"Resultado": retorno if retorno is not None else {}, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_recuperar_dados(conexao, query, params=None):
@@ -278,6 +279,7 @@ def fnc_fechar_local(conexao):
 def fnc_abrir_online():
 	log_info = "F1"
 	varl_detail = None
+	conn = None
 
 	try:
 		log_info = "F2"
@@ -291,7 +293,7 @@ def fnc_abrir_online():
 		varl_detail = f"{log_info}, {e}"
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
-		raise
+		raise RuntimeError(f"Erro ao abrir conexão: {e}")
 
 	return {"Resultado": conn, 'Status_log': log_info, 'Detail_log': varl_detail}
 

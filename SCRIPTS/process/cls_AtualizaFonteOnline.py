@@ -16,6 +16,10 @@ def fnc_calcula_diferenca(tabela1, tabela2):
         log_info = "F2"
         contagem1 = prc_executa_local(tabela1, None, "COUNT")
         contagem2 = prc_executa_online(tabela2, None, "COUNT")
+
+        if contagem1['Status_log'] != 'F0' or contagem2['Status_log'] != 'F0':
+            return {'Resultado': 0, 'Status_log': 'F99', 'Detail_log': f"Erro ao consultar contagens: Origem({contagem1['Detail_log']}), Destino({contagem2['Detail_log']})"}
+
         qtd1 = int(contagem1['Resultado']['Resultado'])
         qtd2 = int(contagem2['Resultado']['Resultado'])
         diferenca = qtd1 - qtd2
@@ -26,7 +30,6 @@ def fnc_calcula_diferenca(tabela1, tabela2):
         varl_detail = f"Erro na etapa {log_info}, {e}"
         log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
         log_info = "F99"
-        raise
 
     finally:
         pass
@@ -51,12 +54,17 @@ def main():
     exec_info += "\t\tMI\n"
     try:
         for consulta_origem, consulta_destino in consultas:
+            resultado_valor = None  # ← inicia aqui
             resultado = fnc_calcula_diferenca(consulta_origem, consulta_destino)
-            exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-            exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-            exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+            print(resultado)
 
-            if resultado['Resultado'] > 0:
+            if resultado:
+                resultado_valor = resultado.get('Resultado')
+                exec_info += f"\t\t\t\tResultado: {resultado_valor}\n"
+                exec_info += f"\t\t\t\tStatus: {resultado.get('Status_log')}\n"
+                exec_info += f"\t\t\t\tDetail: {resultado.get('Detail_log')}\n"
+
+            if resultado_valor is not None and resultado_valor > 0:
                 retorno = prc_executa_local(consulta_origem, None, 'SELECT')
                 df = retorno['Resultado']['Resultado']
                 if not df.empty:
@@ -74,7 +82,6 @@ def main():
         exec_info += "\t\t\tM99\n"
         exec_info += f"Traceback: {traceback.format_exc()}"
         varg_erro = True
-        raise
 
     finally:
         exec_info += "LF\n"

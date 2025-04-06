@@ -17,6 +17,7 @@ from SCRIPTS.process.cls_LimpaLogs import main as limpeza_logs
 from SCRIPTS.process.cls_AtualizaFonteLocal import main as fontes_local
 from SCRIPTS.process.cls_AtualizaFonteOnline import main as fontes_online
 from SCRIPTS.process.cls_LimpaGoogleDrive import main as limpeza_drive
+from SCRIPTS.process.cls_FFMPEG_Video import main as processa_videos
 
 
 def etl_VerificaAgendamento(processo, horario_atual):
