@@ -10,6 +10,7 @@ from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextC
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+from SCRIPTS.functions.cls_GoogleSheets import main as fnc_RetornaDocGoogle
 
 
 # CONFIGURACOES E GLOBAIS
@@ -362,19 +363,25 @@ def main():
 				nome_arquivo = os.path.basename(caminho)
 				nome_inferior = nome_arquivo.replace('DRUMEIBES','INFERIOR')
 				nome_lrc = os.path.splitext(nome_arquivo.replace('DRUMEIBES','LEGENDA'))[0] + '.lrc'
-				nome_intro = "" # Montar inicio (3 segundos, apresentação)
-				nome_final = "" # Montar final (3 segundos, creditos)
-				if (    	os.path.exists(os.path.join(caminho_arquivo, nome_arquivo))
-						and os.path.exists(os.path.join(caminho_arquivo, nome_inferior))
-						and os.path.exists(os.path.join(caminho_arquivo, nome_lrc))
-						and os.path.exists(os.path.join(caminho_arquivo, nome_intro))
-						and os.path.exists(os.path.join(caminho_arquivo, nome_final))
+				nome_intro = r"C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Intro.mp4"
+				nome_final = r"C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Creditos.mp4"
+				if (    os.path.exists(os.path.join(caminho_arquivo, nome_arquivo))
+					and os.path.exists(os.path.join(caminho_arquivo, nome_inferior))
+					and os.path.exists(os.path.join(caminho_arquivo, nome_lrc))
+					and os.path.exists(os.path.join(caminho_arquivo, nome_intro))
+					and os.path.exists(os.path.join(caminho_arquivo, nome_final))
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
-					# ORIGEM DAS INFORMAÇÕES - GOOGLE SHEETS
+					# resultado = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
+					resultado_default = {'saudacao_portugues': 'Um olá da Drumeibes! Siga-nos! Regrave em cima do nosso video!', 'agradecimento_portugues': 'Agradecimentos', 'slogan': 'Drum + Beis 🙃 Bateria + Baixo', 'saudacao_ingles': 'Hello from Drumeibes! Follow us! Re-record over our video!', 'agradecimento_ingles': 'Thanks', 'creditos': 'Menções e agradecimentos aos mestres:', 'saudacao_chines': '来自 Drumeibes 的问候！关注我们！重新录制我们的视频！', 'agradecimento_chines': '谢谢', 'saudacao_coreano': '안녕하세요 Drumeibes입니다! 우리를 따르세요! 영상을 다시 녹화해 보세요!', 'agradecimento_coreano': '감사해요'}
+					resultado_detalhes = {'nome_artista': 'The Scorpions', 'inicio_legenda': '15', 'credito_drums': 'https://www.youtube.com/@jeremyYanzi', 'credito_bass': 'https://www.youtube.com/@kashewsbasschannel3752', 'credito_inferior': 'https://www.youtube.com/@sycomgames'}
+
 					# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
 					# Inserir as legendas da musica para cantar com os videos
-					# resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+					resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 					# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
 				else:
 					exec_info += f"\t\t\t\t{nome_arquivo} COM ARQUIVOS PENDENTES:\n"

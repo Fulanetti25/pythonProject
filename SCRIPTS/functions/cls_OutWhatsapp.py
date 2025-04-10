@@ -34,7 +34,7 @@ def prc_executa_whats(numero, mensagem, anexo):
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_salvar_falha('WHATSAPP', conn_obj, numero, {mensagem+anexo})
+		fnc_salvar_falha('WHATSAPP', varl_detail, numero, mensagem)
 		log_info = "F99"
 
 	finally:
