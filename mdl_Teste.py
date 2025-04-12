@@ -6,7 +6,9 @@ import logging
 import shutil
 import subprocess
 import os
-from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextClip, ColorClip, concatenate_videoclips, ImageClip
+import numpy as np
+from PIL import ImageFont, ImageDraw, Image
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
@@ -266,27 +268,85 @@ def fnc_cortes_preto(arquivo: str):
 	return {"Resultado": arquivo_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):
+def gerar_texto(texto, tamanho, cor, fonte, dimensao=(640, 50), alinhamento='center'):
+	img = Image.new("RGBA", dimensao, (0, 0, 0, 0))
+	draw = ImageDraw.Draw(img)
+
+	font = ImageFont.truetype(fonte, tamanho)
+
+	# Compatível com novas versões da Pillow
+	bbox = draw.textbbox((0, 0), texto, font=font)
+	largura_texto = bbox[2] - bbox[0]
+	altura_texto = bbox[3] - bbox[1]
+
+	pos_x = (dimensao[0] - largura_texto) // 2 if alinhamento == 'center' else 0
+	pos_y = (dimensao[1] - altura_texto) // 2
+
+	draw.text((pos_x, pos_y), texto, font=font, fill=cor)
+
+	return ImageClip(np.array(img)).set_duration(15)  # ajuste a duração conforme necessário
+
+
+def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, final, leg_default, leg_detalhe, parte_duracao = 10):
 	log_info = "F1"
 	varl_detail = None
 	arquivo_out = None
+	size = (640, 360)
 
 	try:
 		log_info = "F2"
-		arquivo_inferior = arquivo.replace('PROCESSAR_', 'INFERIOR_')
-		if not os.path.exists(os.path.join(caminho, arquivo_inferior)):
-			raise FileNotFoundError(f"Arquivo inferior não encontrado: {arquivo_inferior}")
+		video_intro = VideoFileClip(os.path.join(caminho, intro)).subclip(0, 15).resize(size)
+
+		# Fundo preto inferior
+		fundo = ColorClip(size=(640, 360), color=(0, 0, 0), duration=video_intro.duration)
+		fundo = fundo.set_audio(video_intro.audio)
+		salto = 3
+		slogan_clip = gerar_texto(
+			texto=leg_default['slogan'],
+			tamanho=25,
+			cor='yellow',
+			fonte=r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Artes\Atma\Atma-Bold.ttf',
+			dimensao=(640, 50)
+		).set_position(("center", "top")).fadein(salto)
+		emoji = ImageClip(r"C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Artes\emoji_inverso.png") \
+			.set_duration(video_intro.duration) \
+			.set_position(("center", "bottom")) \
+			.fadein(salto) \
+			.resize(0.25)
+		compose_intro = CompositeVideoClip([fundo, slogan_clip, emoji])
+
+		saudacoes = [leg_default['saudacao_portugues'],leg_default['saudacao_ingles'],leg_default['saudacao_chines'],leg_default['saudacao_coreano']]
+		textos_saudacoes = []
+		for i, texto in enumerate(saudacoes):
+			inicio = salto + i * salto
+			altura = 70 + (i * 50)
+			clip = (TextClip(texto,	fontsize=25, color='white',	font='fonts/Atma-Bold.ttf',	size=(640, 50)).set_position(("center", altura)).set_start(inicio).set_duration(video_intro.duration - inicio).fadein(1))
+			textos_saudacoes.append(clip)
+
+		# Composição final
+		compose_intro_ready = CompositeVideoClip([compose_intro, *textos_saudacoes])
+		compose_intro_ready = compose_intro.set_audio(video_intro.audio)
+		compose_intro_ready.preview()
+		breakpoint()
+
+		# COMPOSE FINAL
+		video_final = VideoFileClip(os.path.join(caminho, final)).subclip(0, 15).resize(size)
+
+		# COMPOSE MAIN
+		video_sup= (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
+		video_sup = video_sup.subclip(0, 30)  # Flag de testes rápidos
+		video_inf = (VideoFileClip(os.path.join(caminho, inferior)).subclip(0, video_sup.duration).resize(size))
 
 		log_info = "F3"
-		size = (640, 360)
-		video_sup = (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
-		# video_sup = video_sup.subclip(0, 30)  # Flag de testes rápidos
-		num_partes = int(video_sup.duration // parte_duracao) + 1
-		video_inf = (VideoFileClip(os.path.join(caminho, arquivo_inferior)).subclip(0, video_sup.duration).resize(size))
+		compose_01 = clips_array([[video_sup], [video_inf]])
+		compose_01 = compose_01.set_audio(video_sup.audio)  # Atribui o áudio ao final
+		# compose_02 = concatenate_videoclips([video_intro, compose_01, video_final])
+		compose_01.preview()
+		breakpoint()
 
 		log_info = "F5"
+		num_partes = int(video_sup.duration // parte_duracao) + 1
 		textos_partes = []
-
 		for i in range(num_partes):
 			if i == num_partes - 1:
 				texto_duracao = video_sup.duration - (i * parte_duracao)  # Duração restante no vídeo
@@ -300,8 +360,6 @@ def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):
 			textos_partes.append(texto_parte)  # Adiciona o objeto à lista
 
 		log_info = "F6"
-		# Criar o vídeo composto com o vídeo e os textos
-		compose_01 = clips_array([[video_sup], [video_inf]])
 		compose_02 = CompositeVideoClip([compose_01, *textos_partes])  # Adiciona o texto ao vídeo
 
 		log_info = "F7"
@@ -373,18 +431,18 @@ def main():
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
 					# resultado = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
-					resultado_default = {'saudacao_portugues': 'Um olá da Drumeibes! Siga-nos! Regrave em cima do nosso video!', 'agradecimento_portugues': 'Agradecimentos', 'slogan': 'Drum + Beis 🙃 Bateria + Baixo', 'saudacao_ingles': 'Hello from Drumeibes! Follow us! Re-record over our video!', 'agradecimento_ingles': 'Thanks', 'creditos': 'Menções e agradecimentos aos mestres:', 'saudacao_chines': '来自 Drumeibes 的问候！关注我们！重新录制我们的视频！', 'agradecimento_chines': '谢谢', 'saudacao_coreano': '안녕하세요 Drumeibes입니다! 우리를 따르세요! 영상을 다시 녹화해 보세요!', 'agradecimento_coreano': '감사해요'}
-					resultado_detalhes = {'nome_artista': 'The Scorpions', 'inicio_legenda': '15', 'credito_drums': 'https://www.youtube.com/@jeremyYanzi', 'credito_bass': 'https://www.youtube.com/@kashewsbasschannel3752', 'credito_inferior': 'https://www.youtube.com/@sycomgames'}
+					doc_default = {'saudacao_portugues': 'Um olá da Drumeibes! Siga-nos! Regrave em cima do nosso video!', 'agradecimento_portugues': 'Agradecimentos', 'slogan': 'Drum + Beis 🙃 Bateria + Baixo', 'saudacao_ingles': 'Hello from Drumeibes! Follow us! Re-record over our video!', 'agradecimento_ingles': 'Thanks', 'creditos': 'Menções e agradecimentos aos mestres:', 'saudacao_chines': '来自 Drumeibes 的问候！关注我们！重新录制我们的视频！', 'agradecimento_chines': '谢谢', 'saudacao_coreano': '안녕하세요 Drumeibes입니다! 우리를 따르세요! 영상을 다시 녹화해 보세요!', 'agradecimento_coreano': '감사해요'}
+					doc_detalhe = {'nome_artista': 'The Scorpions', 'inicio_legenda': '15', 'credito_drums': 'https://www.youtube.com/@jeremyYanzi', 'credito_bass': 'https://www.youtube.com/@kashewsbasschannel3752', 'credito_inferior': 'https://www.youtube.com/@sycomgames'}
 
 					# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
 					# Inserir as legendas da musica para cantar com os videos
-					resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe)
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 					# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
 				else:
-					exec_info += f"\t\t\t\t{nome_arquivo} COM ARQUIVOS PENDENTES:\n"
+					pass
 		else:
 			exec_info += f"\t\t\t\tDRUMEIBES SEM Arquivos a processar:\n"
 
