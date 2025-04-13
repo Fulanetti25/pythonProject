@@ -220,7 +220,7 @@ def main(video = 'DRUMEIBES - The Scorpions - Always Somewhere'):
         log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
         logging.shutdown()
 
-    return {'default': resultado1['Resultado'],'detalhes': resultado2['Resultado']}
+    return {'default': resultado1['Resultado'],'detalhe': resultado2['Resultado']}
 
 
 if __name__ == "__main__":
