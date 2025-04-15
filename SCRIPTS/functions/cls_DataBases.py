@@ -5,6 +5,7 @@ import inspect
 import pymssql
 import mysql.connector
 import pandas as pd
+from datetime import datetime
 from sqlalchemy import create_engine
 from decouple import config
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_limpa
@@ -51,7 +52,11 @@ def prc_executa_local(sql_query, params, modo):
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_salvar_falha('SQL_SERVER', conn_log, sql_query, params)
+		if isinstance(params, dict) and params.get("tag") == "AUTO_DELETE":
+			params_falha = {}
+		else:
+			params_falha = params
+		fnc_salvar_falha('SQL_SERVER', conn_log, sql_query, params_falha)
 		log_info = "F99"
 
 	finally:

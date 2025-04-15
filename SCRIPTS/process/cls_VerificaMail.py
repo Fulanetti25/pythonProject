@@ -6,12 +6,12 @@ import logging
 import traceback
 import inspect
 import smtplib
+from datetime import datetime
 from email.header import decode_header
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import message_from_bytes, policy
 from bs4 import BeautifulSoup
-from datetime import datetime
 from decouple import config
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_Logging import main as log_registra

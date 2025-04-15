@@ -21,6 +21,7 @@
       {"Nome": "Json_MailSpam","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mailspam.json"},
       {"Nome": "Json_LogCodes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "logcodes.json"},
       {"Nome": "Json_Palavras","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "palavras.json"},
+      {"Nome": "Json_Drumeibes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "drumeibes.json"},
       {"Nome": "Json_Roobet","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\","Arquivo": "mapa_objetos.json"},
       {"Nome": "Mail_ContatoInvalido","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "contato_invalido.json"}
     ]

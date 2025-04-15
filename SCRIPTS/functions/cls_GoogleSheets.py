@@ -199,14 +199,10 @@ def main(video = 'DRUMEIBES - The Scorpions - Always Somewhere'):
 
     exec_info += "\t\tMI\n"
     try:
-        resultado1 = fnc_recupera_default()
-        exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
-        exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
-        exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
-        resultado2 = fnc_recupera_detalhes(video)
-        exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
-        exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
-        exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
+        resultado = fnc_recupera_detalhes(video)
+        exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+        exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+        exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
         exec_info += "\t\tMF\n"
 
     except Exception as e:
@@ -220,7 +216,7 @@ def main(video = 'DRUMEIBES - The Scorpions - Always Somewhere'):
         log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
         logging.shutdown()
 
-    return {'default': resultado1['Resultado'],'detalhe': resultado2['Resultado']}
+    return resultado
 
 
 if __name__ == "__main__":
