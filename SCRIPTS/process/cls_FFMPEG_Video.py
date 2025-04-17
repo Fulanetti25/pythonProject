@@ -25,30 +25,44 @@ def fnc_tempo_para_segundos(tempo_str):
 	return h * 3600 + m * 60 + s
 
 
-def fnc_dividir_lista(video_path, lista):
-	for i, item in enumerate(lista):
-		tempo_str, descricao = item.split(" - ")
-		tempo_inicial = fnc_tempo_para_segundos(tempo_str)
+def fnc_dividir_fixo(video_path, segundos=10):
+	# Obtém duração do vídeo com ffmpeg
+	command_duracao = ['ffmpeg', '-i', video_path, '-f', 'null', '-']
+	result = subprocess.run(command_duracao, stderr=subprocess.PIPE, text=True)
+	duracao_total = 0
+	for line in result.stderr.split('\n'):
+		if "Duration" in line:
+			tempo_str = line.split(",")[0].split("Duration:")[1].strip()
+			duracao_total = fnc_tempo_para_segundos(tempo_str)
+			break
 
-		tempo_inicial_corte = tempo_inicial - 10
-		tempo_final_corte = tempo_inicial + 10
+	if duracao_total == 0:
+		print("Erro ao obter a duração do vídeo.")
+		return
 
-		output_path = f"corte_{descricao.replace(' ', '_').replace(':', '').replace('-', '')}.mp4"
+	# Divide o vídeo inteiro em blocos de "segundos", inclusive o final parcial
+	parte = 1
+	for i in range(0, int(duracao_total), segundos):
+		tempo_inicial_corte = i
+		tempo_final_corte = min(i + segundos, duracao_total)
+		nome_base = os.path.basename(video_path)
+		output_dir = os.path.dirname(video_path)
+		saida = os.path.join(output_dir, f"{os.path.splitext(nome_base)[0]}_{parte:02d}_{int(tempo_inicial_corte):03d}-{int(tempo_final_corte):03d}.mp4")
 
-		print(f"Cortando vídeo: {descricao} ({tempo_inicial_corte} até {tempo_final_corte})")
-		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, output_path)
+		print(f"Cortando vídeo: Parte {parte} ({tempo_inicial_corte} até {tempo_final_corte})")
+		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, saida)
+		parte += 1
 
 
 def fnc_cortar_video(video_path, tempo_inicial, tempo_final, output_path):
 	command = [
 		'ffmpeg',
+		'-ss', str(tempo_inicial),
 		'-i', video_path,
-		'-ss', str(tempo_inicial),  # Tempo inicial de corte
-		'-to', str(tempo_final),  # Tempo final de corte
-		'-c:v', 'libx264',  # Usando o codec de vídeo H.264
-		'-c:a', 'aac',  # Usando o codec de áudio AAC
-		'-strict', 'experimental',  # Permite a utilização de codecs experimentais
-		'-y',  # Sobrescreve o arquivo de saída sem perguntar
+		'-t', str(tempo_final - tempo_inicial),
+		'-c:v', 'libx264',
+		'-c:a', 'aac',
+		'-y',
 		output_path
 	]
 	subprocess.run(command, check=True)
@@ -208,8 +222,7 @@ def fnc_cortes_preto(arquivo: str):
 
 def fnc_gerar_documento(arquivo, caminho, leg_detalhe, tags, prefixo_creditos, descricao_padrao):
 	# Nome do vídeo no Youtube e TikTok
-	nome_ytb = f"YTB_{arquivo}"
-	nome_tkt = f"TKT_{arquivo}"
+	nome_arquivo = f"{arquivo}".replace('.mp4','')
 
 	# Descrição do vídeo com base no texto padrão e créditos
 	descricao = (
@@ -228,19 +241,18 @@ def fnc_gerar_documento(arquivo, caminho, leg_detalhe, tags, prefixo_creditos, d
 		tags.append(''.join(combinacao))
 
 	tags = list(set(tags))  # Remove duplicatas
-	tags_string = ' '.join([f'"{tag}"' for tag in tags])
+	tags_string = ' '.join([f'#{tag}' for tag in tags])
 
 	# Criando o conteúdo do arquivo de texto
 	texto = f"""
-    Nome do Video Youtube:\n {nome_ytb} \n
-    Nome do Video TikTok:\n {nome_tkt}
+Nome do Video: \n{nome_arquivo}\n
 
-    Descrição do Video:
-    {descricao}
+Descrição do Video:
+{descricao}
 
-    Tags do Video:
-    {tags_string}
-    """
+Tags do Video:
+{tags_string}
+	"""
 
 	# Caminho para salvar o arquivo de texto
 	caminho_txt = os.path.join(caminho, f"{os.path.splitext(arquivo)[0]}.txt")
@@ -250,32 +262,6 @@ def fnc_gerar_documento(arquivo, caminho, leg_detalhe, tags, prefixo_creditos, d
 		f.write(texto)
 
 	print(f"Arquivo de texto gerado: {caminho_txt}")
-
-
-def fnc_dividir_fixo(video_path, segundos=10):
-	# Obtém duração do vídeo
-	command_duracao = ['ffmpeg', '-i', video_path, '-f', 'null', '-']
-	result = subprocess.run(command_duracao, stderr=subprocess.PIPE, text=True)
-	duracao_total = 0
-	for line in result.stderr.split('\n'):
-		if "Duration" in line:
-			tempo_str = line.split(",")[0].split("Duration:")[1].strip()
-			duracao_total = fnc_tempo_para_segundos(tempo_str)
-			break
-
-	if duracao_total == 0:
-		print("Erro ao obter a duração do vídeo.")
-		return
-
-	# Corta ignorando os 15s iniciais e 10s finais
-	for i in range(15, int(duracao_total - 10), segundos):
-		tempo_inicial_corte = i
-		tempo_final_corte = min(i + segundos, duracao_total - 10)
-		nome_base = os.path.basename(video_path)
-		output_dir = os.path.dirname(video_path)
-		saida = os.path.join(output_dir, f"{os.path.splitext(nome_base)[0]}_{(i - 15) // segundos + 1:02d}.mp4")
-		print(f"Cortando vídeo: Parte {(i - 15) // segundos + 1} ({tempo_inicial_corte} até {tempo_final_corte})")
-		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, saida)
 
 
 def fnc_gerar_texto(texto, tamanho, cor, fonte, dimensao=(640, 50), alinhamento='center', tempo=10):
@@ -471,7 +457,7 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 			size=size,
 			method='caption'
 		).set_duration(video_outro.duration)
-		clip_sup = clip_sup.set_position(("center","top"))
+		clip_sup = clip_sup.set_position(("center",-100))
 
 		textos_citacao = []
 		for i, texto in enumerate(citacoes[:2]):
@@ -533,6 +519,9 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 		texto_inferior = TextClip(citacoes[-1], color='yellow',stroke_color='black', fontsize=25, font='Arial', size=size)
 		texto_inferior = (texto_inferior.set_duration(video_sup.duration)).set_position((-220, 200))
 
+		texto_faixa = TextClip(arquivo.replace('Drumeibes - ','').replace('.mp4',''), color='white',stroke_color='black', fontsize=25, font='Arial', size=size)
+		texto_faixa = (texto_faixa.set_duration(video_sup.duration)).set_position((-100, 150))
+
 		log_info = "F5"
 		# prc_traduzir_lrc_musica(os.path.join(caminho,legenda),
 		#                                             'The Scorpions', tomatizar
@@ -548,24 +537,25 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 
 		log_info = "F7"
 		compose_01 = clips_array([[video_sup], [video_inf]])
-		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])  # Adiciona o texto ao vídeo
+		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, texto_faixa, *legendas_musica, *traducao_musica])  # Adiciona o texto ao vídeo
 		compose_main = compose_main.set_audio(video_sup.audio)  # Atribui o áudio ao final
-		# TESTES Necessario para o preview
-		# compose_main = compose_final.set_audio(video_sup.audio)
-		# compose_main.preview()  # TESTES Para visualizar o vídeo
-		# compose_main.write_videofile(os.path.join(pasta_destino, 'teste_' + arquivo), fps=2)  # Fechar em fps=24
+		# TESTES
+		# compose_main = compose_final.set_audio(video_sup.audio) # Necessario para o preview
+		# compose_main.preview()  # Visualização rápida
+		# compose_main.write_videofile(os.path.join(pasta_destino, 'teste_' + arquivo), fps=6)  # Visualização encodada 6 fps
 		# breakpoint()
 
 		log_info = "F8"
-		compose_youtube = concatenate_videoclips([compose_intro,compose_main,compose_outro])
-		compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
+		# compose_youtube = concatenate_videoclips([compose_intro,compose_main,compose_outro])
+		# compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
 
 		log_info = "F9"
-		compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24) # Fechar em fps=24
-		compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24)  # Fechar em fps=24
+		# compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24) # Fechar em fps=24
+		# compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24)  # Fechar em fps=24
 
 		log_info = "F10"
-		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo))
+		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo),10)
+		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo),59)
 		fnc_gerar_documento(arquivo, pasta_destino, leg_detalhe, tags, prefixo_creditos, descricao_padrao)
 
 		log_info = "F0"
@@ -577,7 +567,6 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 
 	finally:
 		pass
-		# os.remove(file_name)
 
 	return {"Resultado": 'Arquivos gerados com sucesso', 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -636,7 +625,7 @@ def prc_processa_videos():
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
 					# doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
 					doc_detalhe = {'nome_artista': 'The Scorpions', 'inicio_legenda': '-2.5', 'credito_drums': '@jeremyYanzi', 'credito_bass': '@kashewsbasschannel3752', 'credito_inferior': '@sycomgames'}
-					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe) #doc_detalhe['Resultado']['Resultado'])
+					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe) #, doc_detalhe['Resultado']['Resultado']) #, doc_detalhe)
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
