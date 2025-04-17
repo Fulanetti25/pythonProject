@@ -4,6 +4,7 @@ import inspect
 import requests
 import json
 import os
+import re
 from datetime import datetime
 from decouple import config
 from SCRIPTS.functions.cls_Logging import main as log_registra
@@ -160,6 +161,139 @@ def fnc_pergunta_gpt(modelo, key, texto):
     return {"Resultado": mensagem, "Status_log": log_info, "Detail_log": varl_detail}
 
 
+def fnc_pergunta_gpt_com_temperature(modelo = None, key = None, texto = None, temperature = None):
+    log_info = "F1"
+    varl_detail = None
+    total_tokens = 0
+    prompt_tokens = 0
+    completion_tokens = 0
+    other_tokens = 0
+
+    try:
+        log_info = "F2"
+        link = "https://api.openai.com/v1/chat/completions"
+        body = {
+            "model": gpt_modelo,
+            "max_tokens": 1000,
+            "temperature": temperature,
+            "messages": [{"role": "user", "content": texto}]
+        }
+        body = json.dumps(body)
+        requisicao = requests.post(link, headers=headers, data=body)
+
+        resposta = requisicao.json()
+
+        # Captura a mensagem de retorno
+        mensagem = resposta["choices"][0]["message"]["content"]
+
+        # Captura o consumo de tokens
+        if "usage" in resposta:
+            total_tokens = resposta["usage"]["total_tokens"]
+            prompt_tokens = resposta["usage"]["prompt_tokens"]
+            completion_tokens = resposta["usage"]["completion_tokens"]
+
+            prompt_tokens_details = resposta["usage"].get("prompt_tokens_details", {})
+            completion_tokens_details = resposta["usage"].get("completion_tokens_details", {})
+            cached_tokens = prompt_tokens_details.get("cached_tokens", 0)
+            audio_tokens = prompt_tokens_details.get("audio_tokens", 0)
+            reasoning_tokens = completion_tokens_details.get("reasoning_tokens", 0)
+            accepted_prediction_tokens = completion_tokens_details.get("accepted_prediction_tokens", 0)
+            rejected_prediction_tokens = completion_tokens_details.get("rejected_prediction_tokens", 0)
+
+            # Soma dos tokens "extras"
+            other_tokens = cached_tokens + audio_tokens + reasoning_tokens + accepted_prediction_tokens + rejected_prediction_tokens
+
+        log_info = "F0"
+
+    except Exception as e:
+        varl_detail = f"Erro na etapa {log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
+
+    finally:
+        prc_gpt_registra(__name__, inspect.currentframe().f_code.co_name, modelo, key, total_tokens, prompt_tokens, completion_tokens, other_tokens)
+
+    return {"Resultado": mensagem, "Status_log": log_info, "Detail_log": varl_detail}
+
+
+def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock moderno", idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=None):
+    log_info = "F1"
+    varl_detail = None
+
+    try:
+        log_info = "F2"
+        with open(caminho_arquivo_lrc, 'r', encoding='utf-8') as file:
+            linhas = file.readlines()
+
+        padrao_linha_com_tempo = re.compile(r"^\[(\d{2}:\d{2}\.\d{2})\](.*)")
+        linhas_para_traduzir = []
+        estrutura_lrc = []
+
+        for linha in linhas:
+            linha = linha.rstrip('\n')
+            match = padrao_linha_com_tempo.match(linha)
+            if match:
+                tempo, texto = match.groups()
+                linhas_para_traduzir.append((tempo, texto.strip()))
+                estrutura_lrc.append(("tradução", tempo))  # marcador de posição
+            else:
+                estrutura_lrc.append(("fixo", linha))  # manter linha como está
+        trecho_para_gpt = "\n".join([f"[{tempo}]{texto}" for tempo, texto in linhas_para_traduzir])
+
+        log_info = "F3"
+        prompt = f"""
+    Você é um tradutor especializado em letras de música. Sua função é traduzir do {idioma_origem.upper()} para o {idioma_destino.upper()} mantendo:
+    
+    - O estilo e musicalidade do artista ({estilo_artista}).
+    - O sentido emocional original do artista ({artista}).
+    - Adaptação de expressões idiomáticas quando necessário.
+    - Gramática correta, mas sem remover a "voz" artística.
+    
+    Abaixo está a letra com marcações de tempo. Traduza **apenas os trechos da letra**, mantendo os tempos **exatamente como estão**:
+    {trecho_para_gpt}
+    
+    Importante:
+    - Não altere os tempos entre colchetes.
+    - Não explique nada, apenas devolva as linhas traduzidas.
+    - Mantenha uma linha por tempo, sem adicionar quebras extras.
+    """
+        log_info = "F4"
+        resposta = fnc_pergunta_gpt_com_temperature(modelo, api_key, prompt, temperature=temperature)
+        linhas_traduzidas = resposta["Resultado"].splitlines()
+
+        log_info = "F5"
+        resultado_final = []
+        idx_trad = 0
+        for tipo, conteudo in estrutura_lrc:
+            if tipo == "fixo":
+                resultado_final.append(conteudo)
+            else:
+                if idx_trad < len(linhas_traduzidas):
+                    resultado_final.append(linhas_traduzidas[idx_trad])
+                    idx_trad += 1
+                else:
+                    resultado_final.append("[ERRO: Tradução ausente]")
+
+        log_info = "F6"
+        caminho_saida = caminho_arquivo_lrc.replace("LEGENDA", "TRADUCAO")
+        with open(caminho_saida, 'w', encoding='utf-8') as file:
+            file.write("\n".join(resultado_final))
+
+        log_info = "F0"
+
+    except Exception as e:
+        varl_detail = f"Erro na etapa {log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
+
+    finally:
+        pass
+
+    return {"Resultado": caminho_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
@@ -171,8 +305,13 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
-
-        resultado = fnc_pergunta_gpt(gpt_modelo, api_key, gpt_pergunta)
+        resultado = prc_traduzir_lrc_musica(os.path.join(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA',r'LEGENDA - The Scorpions - Always Somewhere.lrc'),
+                                            'The Scorpions',
+                                            "rock moderno",
+                                            idioma_origem="en",
+                                            idioma_destino="pt",
+                                            modelo="gpt-4o-mini",
+                                            temperature=0.7)
         exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
         exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
         exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

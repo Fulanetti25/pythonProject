@@ -6,51 +6,18 @@ import logging
 import shutil
 import subprocess
 import os
-from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextClip
+import re
+import itertools
+from moviepy.editor import VideoFileClip, CompositeVideoClip, clips_array, TextClip, ColorClip, concatenate_videoclips, ImageClip, vfx
+import numpy as np
+from PIL import ImageFont, ImageDraw, Image
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_GoogleSheets import main as fnc_RetornaDocGoogle
+from SCRIPTS.functions.cls_APIGPT import prc_traduzir_lrc_musica
 
-
-# CONFIGURACOES E GLOBAIS
 mpy_config.change_settings({"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"})  # Ajuste o caminho conforme sua instalação
-
-
-#     # IMAGENS
-# image = (
-#     ImageClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\i1.png', duration = 15)
-#     # .resize(.5)
-# )
-#     # AUDIOS
-# audio_intro = (
-#     AudioFileClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\a1.mp3')
-#     .subclip(8,18)
-# )
-# audio_credito = (
-#     AudioFileClip(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Always Somewhere\a1.mp3')
-#     .subclip(38,48)
-# )
-#
-# # PADRONIZAÇÃO DE FORMATOS
-# audio_v1 = video_1.audio
-# audio_v2 = video_2.audio
-# audio_videos = concatenate_audioclips([audio_v1, audio_v2])
-# audio_concatenado = concatenate_audioclips([audio_intro, audio_videos, audio_credito])
-# color_0 = ColorClip(size=texto_intro.size, color=(0, 255, 0), duration=3).set_start(0).set_fps(24)
-# color_1 = ColorClip(size=texto_intro.size, color=(0, 150, 150), duration=3).set_start(3).set_fps(24)
-# color_2 = ColorClip(size=texto_intro.size, color=(0, 0, 255), duration=3).set_start(6).set_fps(24)
-#
-# # COMPOSIÇÕES DE FASES
-# compose_intro = CompositeVideoClip([color_2, color_1, color_0, texto_intro]).set_fps(24)
-# compose_credito = CompositeVideoClip([color_0, color_1, color_2, texto_credito]).set_fps(24)
-#
-# # COMPOSIÇÕES FINAIS
-# compose1 = concatenate_videoclips([video_1,video_2])
-# compose2 = CompositeVideoClip([compose1,image])
-# compose3 = clips_array([[compose2],[video_inferior]])
-# compose4 = concatenate_videoclips([compose_intro,compose3])
-# compose5 = concatenate_videoclips([compose4,compose_credito])
 
 
 def fnc_tempo_para_segundos(tempo_str):
@@ -70,33 +37,6 @@ def fnc_dividir_lista(video_path, lista):
 
 		print(f"Cortando vídeo: {descricao} ({tempo_inicial_corte} até {tempo_final_corte})")
 		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, output_path)
-
-
-def fnc_dividir_fixo(video_path, output_path, segundos= 10):
-	command_duracao = [
-		'ffmpeg', '-i', video_path,
-		'-f', 'null', '-'
-	]
-	result = subprocess.run(command_duracao, stderr=subprocess.PIPE, text=True)
-
-	duracao_total = 0
-	for line in result.stderr.split('\n'):
-		if "Duration" in line:
-			tempo_str = line.split(",")[0].split("Duration:")[1].strip()
-			duracao_total = fnc_tempo_para_segundos(tempo_str)
-			break
-
-	if duracao_total == 0:
-		print("Erro ao obter a duração do vídeo.")
-		return
-
-	for i in range(0, int(duracao_total), segundos):
-		tempo_inicial_corte = i
-		tempo_final_corte = min(i + segundos, duracao_total)
-		saida = os.path.join(output_path, f"corte_{i // segundos + 1}.mp4")
-
-		print(f"Cortando vídeo: Parte {i // segundos + 1} ({tempo_inicial_corte} até {tempo_final_corte})")
-		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, saida)
 
 
 def fnc_cortar_video(video_path, tempo_inicial, tempo_final, output_path):
@@ -266,49 +206,367 @@ def fnc_cortes_preto(arquivo: str):
 	return {"Resultado": arquivo_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):
+def fnc_gerar_documento(arquivo, caminho, leg_detalhe, tags, prefixo_creditos, descricao_padrao):
+	# Nome do vídeo no Youtube e TikTok
+	nome_ytb = f"YTB_{arquivo}"
+	nome_tkt = f"TKT_{arquivo}"
+
+	# Descrição do vídeo com base no texto padrão e créditos
+	descricao = (
+		descricao_padrao.strip() + "\n\n"
+		"🎧 Menções e agradecimentos aos mestres:\n"
+		f"{prefixo_creditos}{leg_detalhe['credito_drums']}\n"
+		f"{prefixo_creditos}{leg_detalhe['credito_bass']}\n"
+		f"{prefixo_creditos}{leg_detalhe['credito_inferior']}"
+	)
+
+	# Tags do vídeo
+	palavras_nome = [palavra.lower() for palavra in os.path.splitext(arquivo)[0].split()]
+
+	palavras_limpa = [p.replace('-', '') for p in palavras_nome]
+	for combinacao in itertools.combinations(palavras_limpa, 2):
+		tags.append(''.join(combinacao))
+
+	tags = list(set(tags))  # Remove duplicatas
+	tags_string = ' '.join([f'"{tag}"' for tag in tags])
+
+	# Criando o conteúdo do arquivo de texto
+	texto = f"""
+    Nome do Video Youtube:\n {nome_ytb} \n
+    Nome do Video TikTok:\n {nome_tkt}
+
+    Descrição do Video:
+    {descricao}
+
+    Tags do Video:
+    {tags_string}
+    """
+
+	# Caminho para salvar o arquivo de texto
+	caminho_txt = os.path.join(caminho, f"{os.path.splitext(arquivo)[0]}.txt")
+
+	# Grava o conteúdo no arquivo de texto
+	with open(caminho_txt, 'w', encoding='utf-8') as f:
+		f.write(texto)
+
+	print(f"Arquivo de texto gerado: {caminho_txt}")
+
+
+def fnc_dividir_fixo(video_path, segundos=10):
+	# Obtém duração do vídeo
+	command_duracao = ['ffmpeg', '-i', video_path, '-f', 'null', '-']
+	result = subprocess.run(command_duracao, stderr=subprocess.PIPE, text=True)
+	duracao_total = 0
+	for line in result.stderr.split('\n'):
+		if "Duration" in line:
+			tempo_str = line.split(",")[0].split("Duration:")[1].strip()
+			duracao_total = fnc_tempo_para_segundos(tempo_str)
+			break
+
+	if duracao_total == 0:
+		print("Erro ao obter a duração do vídeo.")
+		return
+
+	# Corta ignorando os 15s iniciais e 10s finais
+	for i in range(15, int(duracao_total - 10), segundos):
+		tempo_inicial_corte = i
+		tempo_final_corte = min(i + segundos, duracao_total - 10)
+		nome_base = os.path.basename(video_path)
+		output_dir = os.path.dirname(video_path)
+		saida = os.path.join(output_dir, f"{os.path.splitext(nome_base)[0]}_{(i - 15) // segundos + 1:02d}.mp4")
+		print(f"Cortando vídeo: Parte {(i - 15) // segundos + 1} ({tempo_inicial_corte} até {tempo_final_corte})")
+		fnc_cortar_video(video_path, tempo_inicial_corte, tempo_final_corte, saida)
+
+
+def fnc_gerar_texto(texto, tamanho, cor, fonte, dimensao=(640, 50), alinhamento='center', tempo=10):
+	img = Image.new("RGBA", dimensao, (0, 0, 0, 0))
+	draw = ImageDraw.Draw(img)
+
+	font = ImageFont.truetype(fonte, tamanho)
+
+	# Compatível com novas versões da Pillow
+	bbox = draw.textbbox((0, 0), texto, font=font)
+	largura_texto = bbox[2] - bbox[0]
+	altura_texto = bbox[3] - bbox[1]
+
+	pos_x = (dimensao[0] - largura_texto) // 2 if alinhamento == 'center' else 0
+	pos_y = (dimensao[1] - altura_texto) // 2
+
+	draw.text((pos_x, pos_y), texto, font=font, fill=cor)
+
+	return ImageClip(np.array(img)).set_duration(tempo)  # ajuste a duração conforme necessário
+
+
+def fnc_gerar_saudacao(texto: str, inicio: int, altura: int, duracao_total: float, fonte: str) -> TextClip:
+	return (TextClip(
+		texto,
+		fontsize=20,
+		color='white',
+		font=fonte,
+		size=(640, 50),
+		method='caption'
+	).set_duration(duracao_total - inicio)
+	 .set_start(inicio)
+	 .set_position(("center", altura))
+	 .fadein(1))
+
+
+def fnc_carregar_legendas_lrc(caminho_arquivo_srt, delay, tamanho_video, duracao_maxima=None):
+	inicio = float(delay)
+	if "LEGENDA" in caminho_arquivo_srt.upper():
+		flag = 1
+	elif "TRADUCAO" in caminho_arquivo_srt.upper():
+		flag = 2
+
+	with open(caminho_arquivo_srt, encoding="utf-8") as f:
+		linhas = f.readlines()
+
+	padrao_linha = re.compile(r"\[(\d+):(\d+\.\d+)\](.*)")
+	entradas = []
+
+	for i, linha in enumerate(linhas):
+		match = padrao_linha.match(linha.strip())
+		if match:
+			minuto, segundo, texto = match.groups()
+			tempo = int(minuto) * 60 + float(segundo)
+			entradas.append({
+				"inicio": tempo,
+				"texto": texto.strip()
+			})
+
+	clips = []
+	for i, entrada in enumerate(entradas):
+		start = entrada["inicio"] + inicio
+
+		if i + 1 < len(entradas):
+			end = entradas[i + 1]["inicio"] + inicio
+		else:
+			end = start + 3  # Última legenda dura 3 segundos
+
+		# Corta legenda que ultrapassa o tempo do vídeo
+		if duracao_maxima is not None and start >= duracao_maxima:
+			continue
+		if duracao_maxima is not None and end > duracao_maxima:
+			end = duracao_maxima
+
+		duracao = end - start
+		if duracao <= 0:
+			continue
+		if duracao < 1:
+			duracao = 1
+
+		texto_legenda = entrada["texto"]
+		if texto_legenda.strip() == "":
+			continue
+		texto_legenda = texto_legenda.replace("@", "")  # Proteção básica
+
+		try:
+			clip = TextClip(
+				texto_legenda,
+				fontsize=50,
+				font='Arial',
+				color= 'yellow' if flag == 1 else 'white',
+				stroke_color='black',
+				size=(tamanho_video[0] - 100, None),
+				method='caption',
+				align = 'center'
+			).set_start(start).set_duration(duracao).set_position(("center", 400 if flag == 1 else 600))
+
+			clips.append(clip)
+		except Exception as e:
+			print(f"[Erro ao criar legenda]: '{texto_legenda}' em {start:.2f}s -> {e}")
+
+	return clips
+
+
+def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_default, leg_detalhe, parte_duracao = 10):
 	log_info = "F1"
 	varl_detail = None
-	arquivo_out = None
+	pasta_destino = os.path.dirname(caminho)
+	size = (640, 360)
+	fonte_atma = leg_default['fonte_atma']
+	fonte_unicode = leg_default['fonte_unicode']
+	saudacoes = leg_default['saudacoes']
+	agradece = leg_default['agradece']
+	citacoes = [leg_detalhe['credito_drums'], leg_detalhe['credito_bass'], leg_detalhe['credito_inferior']]
+	emoji_virado = leg_default['emoji_virado']
+	emoji_timido = leg_default['emoji_timido']
+	tags = list(leg_default['tags'])  # Faz uma cópia da lista original
+	prefixo_creditos = leg_default['prefixo_creditos']
+	descricao_padrao = leg_default['descricao_padrao']
+	traducao = legenda.replace("LEGENDA", "TRADUCAO")
 
 	try:
-		log_info = "F2"
-		arquivo_inferior = arquivo.replace('PROCESSAR_', 'INFERIOR_')
-		if not os.path.exists(os.path.join(caminho, arquivo_inferior)):
-			raise FileNotFoundError(f"Arquivo inferior não encontrado: {arquivo_inferior}")
+		log_info = "F3"
+		# Composição INTRO
+		video_intro = VideoFileClip(os.path.join(caminho, intro)).subclip(0, 15).resize(size)
+
+		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_intro.duration)
+		salto = 3
+		slogan_clip = fnc_gerar_texto(
+			texto=leg_default['slogan'],
+			tamanho=30,
+			cor='yellow',
+			fonte=fonte_atma,
+			dimensao=(640, 50),
+			tempo=15
+		).set_position(("center", "top")).fadein(salto)
+
+		emoji = ImageClip(emoji_virado) \
+			.set_duration(video_intro.duration) \
+			.set_position(("center", "bottom")) \
+			.fadein(salto) \
+			.resize(0.25)
+
+		textos_saudacoes = []
+		for i, texto in enumerate(saudacoes):
+			inicio = salto + i * salto
+			fonte = ImageFont.truetype(fonte_unicode, 30)
+			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
+			draw = ImageDraw.Draw(img)
+			text_size = draw.textbbox((0, 0), texto, font=fonte)
+			text_height = text_size[3] - text_size[1]
+			text_y = (img.height - text_height) // 2 - 50
+			text_width = text_size[2] - text_size[0]
+			text_x = (img.width - text_width) // 2
+			draw.text((text_x, text_y), texto, font=fonte, fill="white")
+			img_path = f"temp_text.png"
+			img.save(img_path)
+			clip = ImageClip(img_path).set_duration(salto)
+			clip = clip.set_position("center").fadein(1)
+			textos_saudacoes.append(clip.set_start(inicio))
+			os.remove(img_path)
+
+		inferior_intro = CompositeVideoClip([fundo, *textos_saudacoes, slogan_clip, emoji])
+		compose_intro = clips_array([[video_intro], [inferior_intro]])
+		compose_intro = compose_intro.set_audio(video_intro.audio)
+
 
 		log_info = "F3"
-		size = (640, 360)
-		video_sup = (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
-		# video_sup = video_sup.subclip(0, 30)  # Flag de testes rápidos
+		# Composição OUTRO
+		video_outro = VideoFileClip(os.path.join(caminho, outro)).subclip(0, 10).resize(size)
+
+		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_outro.duration)
+		salto = 2
+		slogan_clip = fnc_gerar_texto(
+			texto=leg_default['slogan'],
+			tamanho=30,
+			cor='yellow',
+			fonte=fonte_atma,
+			dimensao=(640, 50),
+			tempo = 10
+		).set_position(("center", "top")).fadein(salto)
+
+		emoji = ImageClip(emoji_timido) \
+			.set_duration(video_outro.duration) \
+			.set_position(("center", "bottom")) \
+			.fadein(salto) \
+			.resize(0.25)
+
+		clip_sup = TextClip(
+			"Agradecimentos aos mestres:",
+			fontsize=50,
+			font=fonte_atma,
+			color='white',
+			size=size,
+			method='caption'
+		).set_duration(video_outro.duration)
+		clip_sup = clip_sup.set_position(("center","top"))
+
+		textos_citacao = []
+		for i, texto in enumerate(citacoes[:2]):
+			clip = TextClip(
+				texto,
+				fontsize=25,
+				font=fonte_atma,
+				color='white',
+				size=(size[0] - 40, None),
+				method='caption'
+			).set_duration(video_outro.duration)
+			y = size[1] - (len(citacoes) - i) * 25
+			textos_citacao.append(clip.set_position(("center", y)))
+
+		textos_agradece = []
+		for i, texto in enumerate(agradece):
+			inicio = salto + i * salto
+			fonte = ImageFont.truetype(fonte_unicode, 50)
+			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
+			draw = ImageDraw.Draw(img)
+			text_size = draw.textbbox((0, 0), texto, font=fonte)
+			text_height = text_size[3] - text_size[1]
+			text_y = (img.height - text_height) // 2 - 50
+			text_width = text_size[2] - text_size[0]
+			text_x = (img.width - text_width) // 2
+			draw.text((text_x, text_y), texto, font=fonte, fill="white")
+			img_path = f"temp_text.png"
+			img.save(img_path)
+			clip = ImageClip(img_path).set_duration(salto)
+			clip = clip.set_position("center").fadein(1)
+			textos_agradece.append(clip.set_start(inicio))
+			os.remove(img_path)
+
+		superior_outro = CompositeVideoClip([video_outro, clip_sup, *textos_citacao])
+		inferior_outro = CompositeVideoClip([fundo, *textos_agradece, slogan_clip, emoji])
+		compose_outro = clips_array([[superior_outro], [inferior_outro]])
+		compose_outro = compose_outro.set_audio(video_outro.audio)
+
+		log_info = "F4"
+		# Composição PRINCIPAL
+		video_sup= (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
+		# video_sup = video_sup.subclip(0, 60)  # Flag de testes rápidos
+		video_inf = (VideoFileClip(os.path.join(caminho, inferior)).subclip(0, video_sup.duration).resize(size))
+
 		num_partes = int(video_sup.duration // parte_duracao) + 1
-		video_inf = (VideoFileClip(os.path.join(caminho, arquivo_inferior)).subclip(0, video_sup.duration).resize(size))
-
-		log_info = "F5"
 		textos_partes = []
-
 		for i in range(num_partes):
 			if i == num_partes - 1:
 				texto_duracao = video_sup.duration - (i * parte_duracao)  # Duração restante no vídeo
 			else:
 				texto_duracao = parte_duracao
-			texto_parte = TextClip(f'parte {i + 1}', color='yellow', fontsize=50, font='Arial', size=(640, 720))
+			texto_parte = TextClip(f'parte {i + 1}', color='yellow',stroke_color='black', fontsize=25, font='Arial')
 			texto_parte = (texto_parte.set_duration(texto_duracao)
-						   .set_position(('center', 360 - 50))
+						   .set_position(('right', 'bottom'))
 						   .set_start(i * parte_duracao)
 						   .set_end(i * parte_duracao + texto_duracao))
 			textos_partes.append(texto_parte)  # Adiciona o objeto à lista
 
+		texto_inferior = TextClip(citacoes[-1], color='yellow',stroke_color='black', fontsize=25, font='Arial', size=size)
+		texto_inferior = (texto_inferior.set_duration(video_sup.duration)).set_position((-220, 200))
+
+		log_info = "F5"
+		# prc_traduzir_lrc_musica(os.path.join(caminho,legenda),
+		#                                             'The Scorpions', tomatizar
+		#                                             "rock moderno", tomatizar
+		#                                             idioma_origem="en",
+		#                                             idioma_destino="pt",
+		#                                             modelo="gpt-4o-mini",
+		#                                             temperature=0.7)
+
 		log_info = "F6"
-		# Criar o vídeo composto com o vídeo e os textos
-		compose_01 = clips_array([[video_sup], [video_inf]])
-		compose_02 = CompositeVideoClip([compose_01, *textos_partes])  # Adiciona o texto ao vídeo
+		legendas_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda),	float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
+		traducao_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, traducao), float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
 
 		log_info = "F7"
-		arquivo_out = 'editado.mp4'
-		compose_02 = compose_02.set_audio(video_sup.audio)  # Atribui o áudio ao final
-		# compose_02.preview()  # Para visualizar o vídeo
-		compose_02.write_videofile(os.path.join(caminho, arquivo_out), fps=24)
+		compose_01 = clips_array([[video_sup], [video_inf]])
+		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])  # Adiciona o texto ao vídeo
+		compose_main = compose_main.set_audio(video_sup.audio)  # Atribui o áudio ao final
+		# TESTES Necessario para o preview
+		# compose_main = compose_final.set_audio(video_sup.audio)
+		# compose_main.preview()  # TESTES Para visualizar o vídeo
+		# compose_main.write_videofile(os.path.join(pasta_destino, 'teste_' + arquivo), fps=2)  # Fechar em fps=24
+		# breakpoint()
+
+		log_info = "F8"
+		compose_youtube = concatenate_videoclips([compose_intro,compose_main,compose_outro])
+		compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
+
+		log_info = "F9"
+		compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24) # Fechar em fps=24
+		compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24)  # Fechar em fps=24
+
+		log_info = "F10"
+		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo))
+		fnc_gerar_documento(arquivo, pasta_destino, leg_detalhe, tags, prefixo_creditos, descricao_padrao)
 
 		log_info = "F0"
 
@@ -321,10 +579,10 @@ def fnc_montar_padrao(caminho, arquivo, parte_duracao = 10):
 		pass
 		# os.remove(file_name)
 
-	return {"Resultado": arquivo_out, 'Status_log': log_info, 'Detail_log': varl_detail}
+	return {"Resultado": 'Arquivos gerados com sucesso', 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def prc_processa_videos():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info
@@ -333,9 +591,13 @@ def main():
 	exec_info += "\tGI\n"
 	varg_erro = None
 	lista = []
+
 	processo_banda = json_caminho('Json_VideosDrumeibes')
-	processo_futes = json_caminho('Json_VideosFute')
 	diretorio_banda = os.path.join(processo_banda['Diretorio'])
+	caminho_drumeibes = json_caminho('Json_Drumeibes')
+	doc_default = json_dados(os.path.join(caminho_drumeibes['Diretorio'], caminho_drumeibes['Arquivo']))
+
+	processo_futes = json_caminho('Json_VideosFute')
 	diretorio_futes = os.path.join(processo_futes['Diretorio'])
 	exec_info += "\tGF\n"
 
@@ -355,16 +617,16 @@ def main():
 			exec_info += f"\t\t\t\tFUTE SEM Arquivos a processar.\n"
 
 		# PROCESSOS DRUMEIBES
-		lista = fnc_buscar_processar(diretorio_banda, 'DRUMEIBES')
+		lista = fnc_buscar_processar(diretorio_banda, 'Drumeibes')
 		if lista["Resultado"]:
 			exec_info += f"\t\t\t\tDRUMEIBES COM Arquivos a processar:\n"
 			for caminho in lista["Resultado"]:
 				caminho_arquivo = os.path.dirname(caminho)
 				nome_arquivo = os.path.basename(caminho)
-				nome_inferior = nome_arquivo.replace('DRUMEIBES','INFERIOR')
-				nome_lrc = os.path.splitext(nome_arquivo.replace('DRUMEIBES','LEGENDA'))[0] + '.lrc'
-				nome_intro = r"C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Intro.mp4"
-				nome_final = r"C:\Users\paulo\Downloads\TEMP\DRUMEIBES\Creditos.mp4"
+				nome_inferior = nome_arquivo.replace('Drumeibes','INFERIOR')
+				nome_lrc = os.path.splitext(nome_arquivo.replace('Drumeibes','LEGENDA'))[0] + '.lrc'
+				nome_intro = doc_default['template_intro']
+				nome_final = doc_default['template_outro']
 				if (    os.path.exists(os.path.join(caminho_arquivo, nome_arquivo))
 					and os.path.exists(os.path.join(caminho_arquivo, nome_inferior))
 					and os.path.exists(os.path.join(caminho_arquivo, nome_lrc))
@@ -372,19 +634,14 @@ def main():
 					and os.path.exists(os.path.join(caminho_arquivo, nome_final))
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
-					# resultado = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
-					resultado_default = {'saudacao_portugues': 'Um olá da Drumeibes! Siga-nos! Regrave em cima do nosso video!', 'agradecimento_portugues': 'Agradecimentos', 'slogan': 'Drum + Beis 🙃 Bateria + Baixo', 'saudacao_ingles': 'Hello from Drumeibes! Follow us! Re-record over our video!', 'agradecimento_ingles': 'Thanks', 'creditos': 'Menções e agradecimentos aos mestres:', 'saudacao_chines': '来自 Drumeibes 的问候！关注我们！重新录制我们的视频！', 'agradecimento_chines': '谢谢', 'saudacao_coreano': '안녕하세요 Drumeibes입니다! 우리를 따르세요! 영상을 다시 녹화해 보세요!', 'agradecimento_coreano': '감사해요'}
-					resultado_detalhes = {'nome_artista': 'The Scorpions', 'inicio_legenda': '15', 'credito_drums': 'https://www.youtube.com/@jeremyYanzi', 'credito_bass': 'https://www.youtube.com/@kashewsbasschannel3752', 'credito_inferior': 'https://www.youtube.com/@sycomgames'}
-
-					# Inserir as legendas de @ nos videos, 2 superior para instrumentos, 1 inferior para video inf
-					# Inserir as legendas da musica para cantar com os videos
-					resultado = fnc_montar_padrao(os.path.dirname(caminho), os.path.basename(caminho))
+					# doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
+					doc_detalhe = {'nome_artista': 'The Scorpions', 'inicio_legenda': '-2.5', 'credito_drums': '@jeremyYanzi', 'credito_bass': '@kashewsbasschannel3752', 'credito_inferior': '@sycomgames'}
+					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe) #doc_detalhe['Resultado']['Resultado'])
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-					# resultado = fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'editado.mp4'),os.path.dirname(caminho))
 				else:
-					exec_info += f"\t\t\t\t{nome_arquivo} COM ARQUIVOS PENDENTES:\n"
+					pass
 		else:
 			exec_info += f"\t\t\t\tDRUMEIBES SEM Arquivos a processar:\n"
 
@@ -400,6 +657,14 @@ def main():
 		exec_info += "LF\n"
 		log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
 		logging.shutdown()
+
+
+def prc_processa_tbt():
+	pass
+
+
+def main():
+	prc_processa_videos()
 
 
 if __name__ == "__main__":

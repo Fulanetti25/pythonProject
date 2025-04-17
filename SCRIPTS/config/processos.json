@@ -172,9 +172,20 @@
       "Dia": "Sunday",
       "Classe": "cls_FFMPEG_Video",
       "Nome": "Processamento dos Videos",
-      "Processo": "processa_videos",
+      "Processo": "prc_processa_videos",
       "Predecessor": "N/A",
       "Descricao": "Processar automaticamente videos do FUTE e DRUMEIBES"
+    },
+    {
+      "Horario": "17:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Thursday",
+      "Classe": "cls_FFMPEG_Video",
+      "Nome": "TBT",
+      "Processo": "prc_processa_tbt",
+      "Predecessor": "N/A",
+      "Descricao": "Processar automaticamente tbt da DRUMEIBES"
     }
   ]
 }
