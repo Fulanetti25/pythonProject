@@ -123,10 +123,11 @@ def fnc_busca_video_detalhes(caminho_credencial_json, titulo_video):
 
         # Lê só a coluna B (onde estão os títulos dos vídeos)
         col_b = sheet.col_values(2)  # B = 2
+        col_b_lower = [titulo.lower() for titulo in col_b]
 
         # Encontra a linha onde está o título buscado
-        if titulo_video in col_b:
-            linha = col_b.index(titulo_video) + 1  # índice começa do 0, linha começa do 1
+        if titulo_video in col_b_lower:
+            linha = col_b_lower.index(titulo_video) + 1  # índice começa do 0, linha começa do 1
 
             # Lê a linha inteira ou só colunas C:G (C=3, G=7)
             valores_linha = sheet.row_values(linha)
@@ -199,7 +200,7 @@ def main(video = 'DRUMEIBES - The Scorpions - Always Somewhere'):
 
     exec_info += "\t\tMI\n"
     try:
-        resultado = fnc_recupera_detalhes(video)
+        resultado = fnc_recupera_detalhes(video.lower())
         exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
         exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
         exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

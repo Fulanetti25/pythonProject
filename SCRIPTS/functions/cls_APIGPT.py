@@ -5,6 +5,7 @@ import requests
 import json
 import os
 import re
+import tiktoken
 from datetime import datetime
 from decouple import config
 from SCRIPTS.functions.cls_Logging import main as log_registra
@@ -32,6 +33,15 @@ custos = {
     "gpt-4o-mini": {"Entrada": 0.15/1_000_000, "Saida": 0.6/1_000_000},
     "gpt-4o-mini-audio-preview": {"Entrada": 0.15/1_000_000, "Saida": 0.6/1_000_000}
 }
+
+
+def fnc_estimar_tokens(modelo, texto):
+    try:
+        encoding = tiktoken.encoding_for_model(modelo)
+    except:
+        encoding = tiktoken.get_encoding("cl100k_base")  # fallback genérico
+    tokens = encoding.encode(texto)
+    return len(tokens)
 
 
 def ler_sumarizar_gpt_log():
@@ -259,6 +269,20 @@ def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock m
     - Mantenha uma linha por tempo, sem adicionar quebras extras.
     """
         log_info = "F4"
+        tokens_estimados = fnc_estimar_tokens(modelo, prompt)
+        custo_estimado = (tokens_estimados / 1000) * PRECO_POR_1K.get(modelo, 0.01)
+
+        print(f"\n--- ESTIMATIVA DE CUSTO ---")
+        print(f"Modelo: {modelo}")
+        print(f"Tokens estimados: {tokens_estimados}")
+        print(f"Custo estimado: R$ {custo_estimado:.4f}")
+        print("--------------------------")
+        confirmacao = input("Deseja continuar com a tradução? [s/n]: ").lower()
+        if confirmacao != 's':
+            print("Tradução cancelada pelo usuário.")
+            return {"Resultado": None, 'Status_log': 'F_CANCELADA',
+                    'Detail_log': 'Usuário cancelou após estimativa de custo.'}
+        breakpoint()
         resposta = fnc_pergunta_gpt_com_temperature(modelo, api_key, prompt, temperature=temperature)
         linhas_traduzidas = resposta["Resultado"].splitlines()
 

@@ -234,21 +234,18 @@ def fnc_gerar_documento(arquivo, caminho, leg_detalhe, tags, prefixo_creditos, d
 	)
 
 	# Tags do vídeo
-	palavras_nome = [palavra.lower() for palavra in os.path.splitext(arquivo)[0].split()]
-
-	palavras_limpa = [p.replace('-', '') for p in palavras_nome]
-	for combinacao in itertools.combinations(palavras_limpa, 2):
-		tags.append(''.join(combinacao))
-
+	palavras_nome = [parte.strip().lower() for parte in os.path.splitext(arquivo.replace('-', '').replace('.mp4', ''))[0].split(' ') if parte.strip() != '']
+	for combinacao in itertools.combinations(palavras_nome, 1):
+		tags.append(' '.join(combinacao).replace('  ', ' '))
 	tags = list(set(tags))  # Remove duplicatas
-	tags_string = ' '.join([f'#{tag}' for tag in tags])
+	tags_string = ' '.join([f'#{tag},' for tag in tags]) + ''
 
 	# Criando o conteúdo do arquivo de texto
 	texto = f"""
-Nome do Video: \n{nome_arquivo}\n
+{nome_arquivo}\n
+{descricao}\n
+Link Original:
 
-Descrição do Video:
-{descricao}
 
 Tags do Video:
 {tags_string}
@@ -256,11 +253,9 @@ Tags do Video:
 
 	# Caminho para salvar o arquivo de texto
 	caminho_txt = os.path.join(caminho, f"{os.path.splitext(arquivo)[0]}.txt")
-
 	# Grava o conteúdo no arquivo de texto
 	with open(caminho_txt, 'w', encoding='utf-8') as f:
 		f.write(texto)
-
 	print(f"Arquivo de texto gerado: {caminho_txt}")
 
 
@@ -349,14 +344,14 @@ def fnc_carregar_legendas_lrc(caminho_arquivo_srt, delay, tamanho_video, duracao
 		try:
 			clip = TextClip(
 				texto_legenda,
-				fontsize=50,
+				fontsize=90,
 				font='Arial',
 				color= 'yellow' if flag == 1 else 'white',
 				stroke_color='black',
 				size=(tamanho_video[0] - 100, None),
 				method='caption',
 				align = 'center'
-			).set_start(start).set_duration(duracao).set_position(("center", 400 if flag == 1 else 600))
+			).set_start(start).set_duration(duracao).set_position(("center", 900 if flag == 1 else 1200))
 
 			clips.append(clip)
 		except Exception as e:
@@ -369,7 +364,7 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 	log_info = "F1"
 	varl_detail = None
 	pasta_destino = os.path.dirname(caminho)
-	size = (640, 360)
+	size = (1080, 810)
 	fonte_atma = leg_default['fonte_atma']
 	fonte_unicode = leg_default['fonte_unicode']
 	saudacoes = leg_default['saudacoes']
@@ -386,110 +381,61 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 		log_info = "F3"
 		# Composição INTRO
 		video_intro = VideoFileClip(os.path.join(caminho, intro)).subclip(0, 15).resize(size)
-
 		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_intro.duration)
+		slogan_clip = fnc_gerar_texto(texto=leg_default['slogan'],tamanho=70,cor='yellow',fonte=fonte_atma,dimensao=(1080, 100),tempo=15).set_position(("center", "top"))
+		emoji = ImageClip(emoji_virado).set_duration(video_intro.duration).set_position(("center", "bottom")).resize(0.5)
+
 		salto = 3
-		slogan_clip = fnc_gerar_texto(
-			texto=leg_default['slogan'],
-			tamanho=30,
-			cor='yellow',
-			fonte=fonte_atma,
-			dimensao=(640, 50),
-			tempo=15
-		).set_position(("center", "top")).fadein(salto)
-
-		emoji = ImageClip(emoji_virado) \
-			.set_duration(video_intro.duration) \
-			.set_position(("center", "bottom")) \
-			.fadein(salto) \
-			.resize(0.25)
-
 		textos_saudacoes = []
 		for i, texto in enumerate(saudacoes):
-			inicio = salto + i * salto
-			fonte = ImageFont.truetype(fonte_unicode, 30)
+			inicio = (i + 1) * salto
 			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
 			draw = ImageDraw.Draw(img)
-			text_size = draw.textbbox((0, 0), texto, font=fonte)
-			text_height = text_size[3] - text_size[1]
-			text_y = (img.height - text_height) // 2 - 50
-			text_width = text_size[2] - text_size[0]
-			text_x = (img.width - text_width) // 2
-			draw.text((text_x, text_y), texto, font=fonte, fill="white")
-			img_path = f"temp_text.png"
-			img.save(img_path)
-			clip = ImageClip(img_path).set_duration(salto)
-			clip = clip.set_position("center").fadein(1)
-			textos_saudacoes.append(clip.set_start(inicio))
-			os.remove(img_path)
+			bbox = draw.textbbox((0, 0), texto, font=ImageFont.truetype(fonte_unicode, 70))
+			text_x = (size[0] - (bbox[2] - bbox[0])) // 2
+			text_y = (size[1] - (bbox[3] - bbox[1])) // 2 - 100
+			draw.text((text_x, text_y), texto, font=ImageFont.truetype(fonte_unicode, 70), fill="white")
+			img.save(f"temp_text.png")
+			clip = (ImageClip(f"temp_text.png").set_duration(salto).set_position("center").fadein(1).set_start(inicio))
+			textos_saudacoes.append(clip)
+			os.remove(f"temp_text.png")
 
 		inferior_intro = CompositeVideoClip([fundo, *textos_saudacoes, slogan_clip, emoji])
 		compose_intro = clips_array([[video_intro], [inferior_intro]])
 		compose_intro = compose_intro.set_audio(video_intro.audio)
 
-
 		log_info = "F3"
 		# Composição OUTRO
 		video_outro = VideoFileClip(os.path.join(caminho, outro)).subclip(0, 10).resize(size)
-
 		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_outro.duration)
-		salto = 2
-		slogan_clip = fnc_gerar_texto(
-			texto=leg_default['slogan'],
-			tamanho=30,
-			cor='yellow',
-			fonte=fonte_atma,
-			dimensao=(640, 50),
-			tempo = 10
-		).set_position(("center", "top")).fadein(salto)
-
-		emoji = ImageClip(emoji_timido) \
-			.set_duration(video_outro.duration) \
-			.set_position(("center", "bottom")) \
-			.fadein(salto) \
-			.resize(0.25)
-
-		clip_sup = TextClip(
-			"Agradecimentos aos mestres:",
-			fontsize=50,
-			font=fonte_atma,
-			color='white',
-			size=size,
-			method='caption'
-		).set_duration(video_outro.duration)
-		clip_sup = clip_sup.set_position(("center",-100))
+		slogan_clip = fnc_gerar_texto(texto=leg_default['slogan'],tamanho=70,cor='yellow',fonte=fonte_atma,dimensao=(1080, 100),tempo = 10).set_position(("center", "top"))
+		emoji = ImageClip(emoji_timido).set_duration(video_outro.duration).set_position(("center", "bottom")).resize(0.5)
+		clip_sup = TextClip("Agradecimentos aos mestres:", fontsize=70,	font=fonte_atma, color='white',	size=size, method='caption').set_duration(video_outro.duration).set_position(("center",-300))
 
 		textos_citacao = []
 		for i, texto in enumerate(citacoes[:2]):
-			clip = TextClip(
-				texto,
-				fontsize=25,
-				font=fonte_atma,
-				color='white',
-				size=(size[0] - 40, None),
-				method='caption'
-			).set_duration(video_outro.duration)
-			y = size[1] - (len(citacoes) - i) * 25
+			clip = TextClip(texto, fontsize=70,	font=fonte_atma, color='white',	size=(size[0] - 40, None), method='caption').set_duration(video_outro.duration)
+			y = size[1] - (len(citacoes) - i) * 100
 			textos_citacao.append(clip.set_position(("center", y)))
 
+		salto = 2
 		textos_agradece = []
 		for i, texto in enumerate(agradece):
 			inicio = salto + i * salto
-			fonte = ImageFont.truetype(fonte_unicode, 50)
+			fonte = ImageFont.truetype(fonte_unicode, 70)
 			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
 			draw = ImageDraw.Draw(img)
 			text_size = draw.textbbox((0, 0), texto, font=fonte)
 			text_height = text_size[3] - text_size[1]
-			text_y = (img.height - text_height) // 2 - 50
+			text_y = (img.height - text_height) // 2 - 100
 			text_width = text_size[2] - text_size[0]
 			text_x = (img.width - text_width) // 2
 			draw.text((text_x, text_y), texto, font=fonte, fill="white")
-			img_path = f"temp_text.png"
-			img.save(img_path)
-			clip = ImageClip(img_path).set_duration(salto)
+			img.save(f"temp_text.png")
+			clip = ImageClip(f"temp_text.png").set_duration(salto)
 			clip = clip.set_position("center").fadein(1)
 			textos_agradece.append(clip.set_start(inicio))
-			os.remove(img_path)
+			os.remove(f"temp_text.png")
 
 		superior_outro = CompositeVideoClip([video_outro, clip_sup, *textos_citacao])
 		inferior_outro = CompositeVideoClip([fundo, *textos_agradece, slogan_clip, emoji])
@@ -509,27 +455,19 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 				texto_duracao = video_sup.duration - (i * parte_duracao)  # Duração restante no vídeo
 			else:
 				texto_duracao = parte_duracao
-			texto_parte = TextClip(f'parte {i + 1}', color='yellow',stroke_color='black', fontsize=25, font='Arial')
+			texto_parte = TextClip(f'parte {i + 1}', color='yellow',stroke_color='black', fontsize=70, font='Arial')
 			texto_parte = (texto_parte.set_duration(texto_duracao)
 						   .set_position(('right', 'bottom'))
 						   .set_start(i * parte_duracao)
 						   .set_end(i * parte_duracao + texto_duracao))
 			textos_partes.append(texto_parte)  # Adiciona o objeto à lista
 
-		texto_inferior = TextClip(citacoes[-1], color='yellow',stroke_color='black', fontsize=25, font='Arial', size=size)
-		texto_inferior = (texto_inferior.set_duration(video_sup.duration)).set_position((-220, 200))
-
-		texto_faixa = TextClip(arquivo.replace('Drumeibes - ','').replace('.mp4',''), color='white',stroke_color='black', fontsize=25, font='Arial', size=size)
-		texto_faixa = (texto_faixa.set_duration(video_sup.duration)).set_position((-100, 150))
+		texto_inferior = TextClip(citacoes[-1], color='yellow',stroke_color='black', fontsize=70, font='Arial')
+		texto_inferior = texto_inferior.set_duration(video_sup.duration).set_position((0, 800))
 
 		log_info = "F5"
-		# prc_traduzir_lrc_musica(os.path.join(caminho,legenda),
-		#                                             'The Scorpions', tomatizar
-		#                                             "rock moderno", tomatizar
-		#                                             idioma_origem="en",
-		#                                             idioma_destino="pt",
-		#                                             modelo="gpt-4o-mini",
-		#                                             temperature=0.7)
+		# prc_traduzir_lrc_musica(os.path.join(caminho,legenda), 'Duran Duran', "rock moderno", idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=0.7)
+		# breakpoint()
 
 		log_info = "F6"
 		legendas_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda),	float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
@@ -537,25 +475,28 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 
 		log_info = "F7"
 		compose_01 = clips_array([[video_sup], [video_inf]])
-		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, texto_faixa, *legendas_musica, *traducao_musica])  # Adiciona o texto ao vídeo
-		compose_main = compose_main.set_audio(video_sup.audio)  # Atribui o áudio ao final
-		# TESTES
-		# compose_main = compose_final.set_audio(video_sup.audio) # Necessario para o preview
-		# compose_main.preview()  # Visualização rápida
-		# compose_main.write_videofile(os.path.join(pasta_destino, 'teste_' + arquivo), fps=6)  # Visualização encodada 6 fps
-		# breakpoint()
+		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])
+		compose_main = compose_main.set_audio(video_sup.audio)
+		if compose_main.size != (1080, 1620):
+			raise ValueError(f"Tamanho final incorreto: {compose_main.size}, esperado: (1080, 810 x 2)")
 
 		log_info = "F8"
-		# compose_youtube = concatenate_videoclips([compose_intro,compose_main,compose_outro])
-		# compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
+		compose_final = concatenate_videoclips([compose_intro, compose_main, compose_outro])
+		texto_faixa = TextClip(arquivo.replace('.mp4', ''),	color='white', stroke_color='white', fontsize=40, font='Arial',	size=(1080, 300))
+		texto_faixa = texto_faixa.set_duration(compose_final.duration)
+		texto_faixa = texto_faixa.set_position(("left", "bottom"))
 
 		log_info = "F9"
-		# compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24) # Fechar em fps=24
-		# compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24)  # Fechar em fps=24
+		compose_youtube = CompositeVideoClip([compose_final, texto_faixa], size=(1080, 1920))
+		compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
+		compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24, threads=4)
+		winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
+		compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24, threads=4)
+		winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
+		winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 
 		log_info = "F10"
-		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo),10)
-		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'TKT_' + arquivo),59)
+		# fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'YTB_' + arquivo), 60)
 		fnc_gerar_documento(arquivo, pasta_destino, leg_detalhe, tags, prefixo_creditos, descricao_padrao)
 
 		log_info = "F0"
@@ -568,7 +509,7 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 	finally:
 		pass
 
-	return {"Resultado": 'Arquivos gerados com sucesso', 'Status_log': log_info, 'Detail_log': varl_detail}
+	return {"Resultado": 'Arquivo ' + str(compose_youtube.size) + ' gerado com sucesso', 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def prc_processa_videos():
@@ -623,9 +564,9 @@ def prc_processa_videos():
 					and os.path.exists(os.path.join(caminho_arquivo, nome_final))
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
-					# doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
-					doc_detalhe = {'nome_artista': 'The Scorpions', 'inicio_legenda': '-2.5', 'credito_drums': '@jeremyYanzi', 'credito_bass': '@kashewsbasschannel3752', 'credito_inferior': '@sycomgames'}
-					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe) #, doc_detalhe['Resultado']['Resultado']) #, doc_detalhe)
+					doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
+					print(doc_detalhe)
+					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe['Resultado']['Resultado'])
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
@@ -659,4 +600,3 @@ def main():
 if __name__ == "__main__":
 	main()
 	print(exec_info)
-	winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
