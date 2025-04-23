@@ -242,7 +242,7 @@ def fnc_abrir_local():
 		cursor = conn.cursor()
 
 		cursor.execute("SELECT 1")
-		print("✅ Conexão com SQLServer Aberta!")
+		# print("✅ Conexão com SQLServer Aberta!")
 		log_info = "F0"
 
 	except Exception as e:
@@ -265,7 +265,7 @@ def fnc_fechar_local(conexao):
 	try:
 		log_info = "F2"
 		conexao.close()
-		print("❌ Conexão com SQLServer Fechada!")
+		# print("❌ Conexão com SQLServer Fechada!")
 
 		log_info = "F0"
 
@@ -290,8 +290,6 @@ def fnc_abrir_online():
 		log_info = "F2"
 		conn = mysql.connector.connect(host=umbler_host, port=umbler_port, database=umbler_database, user=umbler_user, password=umbler_password)
 
-		if conn.is_connected():
-			print("✅ Conexão com MySQL Aberta!")
 		log_info = "F0"
 
 	except Exception as e:
@@ -310,7 +308,6 @@ def fnc_fechar_online(conexao):
 	try:
 		log_info = "F2"
 		conexao.close()
-		print("❌ Conexão com MySQL Fechada!")
 
 		log_info = "F0"
 

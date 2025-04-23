@@ -29,7 +29,7 @@ def etl_ExportaProjetos():
 		df = pd.DataFrame(data)
 
 		log_info = "F3"
-		df = df.map(lambda x: str(x).replace(';', ',') if isinstance(x, str) else x)
+		df = df.map(lambda x: str(x).replace(',', ';') if isinstance(x, str) else x)
 		df = df.map(lambda x: str(x).replace('\n', '') if isinstance(x, str) else x)
 		df = df.map(lambda x: str(x).replace('\r', '') if isinstance(x, str) else x)
 

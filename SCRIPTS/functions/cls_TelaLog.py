@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_BarraProgresso import barra_Criar, barra_CriarTempo, barra_Atualizar, barra_Finalizar
+from SCRIPTS.process.cls_ContaPJ import fnc_saldos_por_periodo
+from SCRIPTS.process.cls_ProjetosPSM import fnc_projetos_por_periodo
 
 COLUNA_ESQ = 0
 COLUNA_DIR = 100
@@ -152,33 +154,38 @@ def tela_inferior_dir(term):
     # Configuração do cabeçalho dos KPIs
     col_base = COLUNA_DIR
     linha_base = LINHA_KPI
-    meses = ["ATUAL", "DEZ_24", "NOV_24", "OUT_24", "SET_24"]  # Substituir pelos meses relevantes
+    colunas_kpi = ["ATUAL", "YTD", "MTD", "M-1", "M-2", "M-3", "M-4", "M-5", "M-6"]
+
+    resultado_pj = fnc_saldos_por_periodo()
+    saldos_pj = resultado_pj["Resultado"]["saldo"]
+    resultado_psm = fnc_projetos_por_periodo()
+    saldos_psm = resultado_psm["Resultado"]
 
     # Título da seção
     exibir_texto(term, col_base, linha_base, "KPIs Operacionais:", estilo=term.underline + term.bold_red)
 
     # Cabeçalho das colunas
+    largura_coluna = 13
+    offset_nome_kpi = 20  # espaço reservado para os nomes
     linha_base += 1
-    for i, mes in enumerate(meses):
-        exibir_texto(term, col_base + i * 15, linha_base, mes, estilo=term.bold_white)
+    for i, col in enumerate(colunas_kpi):
+        exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, col, estilo=term.bold_white)
 
     # Definição dos KPIs e seus valores
     kpis = [
-        {"nome": "Conta PF Saldo", "valores": [15000, 14500, 14000, 13000, 12500]},
-        {"nome": "Conta PJ Saldo", "valores": [75000, 74000, 73000, 72000, 71000]},
-        {"nome": "Valor Comprometido", "valores": [20000, 19500, 19000, 18000, 17500]},
-        {"nome": "Ticket Médio", "valores": [500, 510, 520, 530, 540]},
-        {"nome": "Projetos", "valores": [10, 9, 8, 7, 6]},
-        {"nome": "% Sucesso Comercial", "valores": [95, 93, 90, 88, 85]},
-        {"nome": "% Sucesso Desenvolvimento", "valores": [90, 89, 88, 87, 85]},
+        {"nome": "NU_DAN_PJ", "valores": [saldos_pj["NU_DAN_PJ"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "NU_FULA_PJ", "valores": [saldos_pj["NU_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "total Leads", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'total Leads'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
+        {"nome": "Leads Válidos", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'Leads Válidos'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
+        {"nome": "% Sucesso COM", "valores": [round(saldos_psm.loc[saldos_psm['PERIODO'] == col, '% Sucesso COM'].values[0], 2) if col in saldos_psm['PERIODO'].values else 0.0 for col in colunas_kpi]}
     ]
 
-    # Exibição dos KPIs
     for kpi_idx, kpi in enumerate(kpis):
         linha_base += 1
         exibir_texto(term, col_base, linha_base, kpi["nome"], estilo=term.bold_cyan)
         for i, valor in enumerate(kpi["valores"]):
-            exibir_texto(term, col_base + i * 15, linha_base, str(valor), estilo=term.bold_white)
+            exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, str(valor),
+                         estilo=term.bold_white)
 
 
 def desenhar_tela(term, proxima_execucao, processos_filtrados, fake, tempo, executando):
