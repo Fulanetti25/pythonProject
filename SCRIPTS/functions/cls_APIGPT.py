@@ -227,7 +227,7 @@ def fnc_pergunta_gpt_com_temperature(modelo = None, key = None, texto = None, te
     return {"Resultado": mensagem, "Status_log": log_info, "Detail_log": varl_detail}
 
 
-def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock moderno", idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=None):
+def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo, idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=None):
     log_info = "F1"
     varl_detail = None
 
@@ -255,7 +255,7 @@ def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock m
         prompt = f"""
     Você é um tradutor especializado em letras de música. Sua função é traduzir do {idioma_origem.upper()} para o {idioma_destino.upper()} mantendo:
     
-    - O estilo e musicalidade do artista ({estilo_artista}).
+    - O estilo e musicalidade do artista ({estilo}).
     - O sentido emocional original do artista ({artista}).
     - Adaptação de expressões idiomáticas quando necessário.
     - Gramática correta, mas sem remover a "voz" artística.
@@ -269,20 +269,17 @@ def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock m
     - Mantenha uma linha por tempo, sem adicionar quebras extras.
     """
         log_info = "F4"
-        tokens_estimados = fnc_estimar_tokens(modelo, prompt)
-        custo_estimado = (tokens_estimados / 1000) * PRECO_POR_1K.get(modelo, 0.01)
-
-        print(f"\n--- ESTIMATIVA DE CUSTO ---")
-        print(f"Modelo: {modelo}")
-        print(f"Tokens estimados: {tokens_estimados}")
-        print(f"Custo estimado: R$ {custo_estimado:.4f}")
-        print("--------------------------")
+        tokens_entrada = fnc_estimar_tokens(modelo, prompt)
+        tokens_saida = tokens_entrada
+        custo_por_token_entrada = custos.get(modelo, {}).get("Entrada", 0)
+        custo_por_token_saida = custos.get(modelo, {}).get("Saida", 0)
+        custo_estimado = (tokens_entrada * custo_por_token_entrada) + (tokens_saida * custo_por_token_saida)
+        print(f"Custo estimado: R$ {custo_estimado}:.6f no modelo {modelo} para {tokens_entrada} + {tokens_saida} tokens.")
         confirmacao = input("Deseja continuar com a tradução? [s/n]: ").lower()
         if confirmacao != 's':
             print("Tradução cancelada pelo usuário.")
-            return {"Resultado": None, 'Status_log': 'F_CANCELADA',
-                    'Detail_log': 'Usuário cancelou após estimativa de custo.'}
-        breakpoint()
+            return {"Resultado": None, 'Status_log': 'F_CANCELADA', 'Detail_log': 'Usuário cancelou após estimativa de custo.'}
+
         resposta = fnc_pergunta_gpt_com_temperature(modelo, api_key, prompt, temperature=temperature)
         linhas_traduzidas = resposta["Resultado"].splitlines()
 
@@ -318,7 +315,7 @@ def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo_artista="rock m
     return {"Resultado": caminho_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def main(caminho=r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA', arquivo =  r'LEGENDA - Dua Lipa - Dance The Night.lrc'):
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
     exec_info = "\nLI\n"
@@ -329,17 +326,27 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
-        resultado = prc_traduzir_lrc_musica(os.path.join(r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA',r'LEGENDA - The Scorpions - Always Somewhere.lrc'),
-                                            'The Scorpions',
-                                            "rock moderno",
-                                            idioma_origem="en",
-                                            idioma_destino="pt",
-                                            modelo="gpt-4o-mini",
-                                            temperature=0.7)
-        exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-        exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-        exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-        ler_sumarizar_gpt_log()
+        caminho_arquivo_lrc = os.path.join(caminho,arquivo)
+        partes = caminho_arquivo_lrc.split(" - ")
+        artista = partes[1].strip()
+        estilo = "rock moderno"
+        confirmacao = input(f"Deseja traduzir '{artista}', estilo '{estilo}'? [s/n]: ").strip().lower()
+        if confirmacao == "n":
+            novo_estilo = input(
+                f"Digite um novo estilo para '{artista}' ou pressione Enter para manter '{estilo}': ").strip()
+            if novo_estilo:
+                estilo = novo_estilo
+
+        confirmacao_final = input(f"Confirma traduzir '{artista}' no estilo '{estilo}'? [s/n]: ").strip().lower()
+        if confirmacao_final == "s":
+            print(f"Traduzindo '{artista}' no estilo '{estilo}'...")
+            resultado = prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo, idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=0.7)
+            exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+            exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+            exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+            ler_sumarizar_gpt_log()
+        else:
+            print("Tradução cancelada.")
 
         exec_info += "\t\tMF\n"
 

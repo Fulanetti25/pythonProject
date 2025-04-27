@@ -2,9 +2,9 @@ import logging
 import traceback
 import inspect
 import gspread
+import time
 from decouple import config
 from string import ascii_uppercase
-import time
 from oauth2client.service_account import ServiceAccountCredentials
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse

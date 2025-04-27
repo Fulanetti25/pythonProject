@@ -166,26 +166,37 @@
       "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
     },
     {
+      "Horario": "10:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Saturday",
+      "Classe": "cls_FFMPEG_Video",
+      "Nome": "Pré-Teste",
+      "Processo": "prc_teste_dmb",
+      "Predecessor": "N/A",
+      "Descricao": "Processar automaticamente teste dos arquivos da DRUMEIBES"
+    },
+    {
+      "Horario": "08:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Sunday",
+      "Classe": "cls_FFMPEG_Video",
+      "Nome": "TBT",
+      "Processo": "prc_processa_dmb",
+      "Predecessor": "N/A",
+      "Descricao": "Processar automaticamente video semanal da DRUMEIBES"
+    },
+    {
       "Horario": "11:30",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
       "Dia": "Sunday",
       "Classe": "cls_FFMPEG_Video",
-      "Nome": "Processamento dos Videos",
-      "Processo": "prc_processa_videos",
+      "Nome": "FUT",
+      "Processo": "prc_processa_fut",
       "Predecessor": "N/A",
-      "Descricao": "Processar automaticamente videos do FUTE e DRUMEIBES"
-    },
-    {
-      "Horario": "17:30",
-      "Frequencia": "Semanal",
-      "Intervalo": "N/A",
-      "Dia": "Thursday",
-      "Classe": "cls_FFMPEG_Video",
-      "Nome": "TBT",
-      "Processo": "prc_processa_tbt",
-      "Predecessor": "N/A",
-      "Descricao": "Processar automaticamente tbt da DRUMEIBES"
+      "Descricao": "Processar automaticamente domingo do FUTE"
     }
   ]
 }

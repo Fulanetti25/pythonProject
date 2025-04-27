@@ -2,6 +2,7 @@ import os
 import logging
 import traceback
 import inspect
+import re
 import pymssql
 import mysql.connector
 import pandas as pd
@@ -126,9 +127,30 @@ def fnc_recuperar_dados(conexao, query, params=None):
 		if not df.empty:
 			primeira_coluna = df.columns[0]
 			try:
-				df[primeira_coluna] = pd.to_datetime(df[primeira_coluna], errors='coerce')
-				if df[primeira_coluna].notna().all():  # Se todos os valores forem datas válidas
+				amostra = df[primeira_coluna].dropna().astype(str).iloc[0]
+				formato = None
+				if re.fullmatch(r'\d{2}/\d{2}/\d{4}', amostra):
+					formato = '%d/%m/%Y'
+				elif re.fullmatch(r'\d{4}-\d{2}-\d{2}', amostra):
+					formato = '%Y-%m-%d'
+
+				df[primeira_coluna] = pd.to_datetime(
+					df[primeira_coluna].astype(str).str.strip(),
+					format='%d/%m/%Y %H:%M:%S',
+					errors='coerce'
+				)
+
+				# Se falhar (todos nulos), tenta com apenas data
+				if df[primeira_coluna].isna().all():
+					df[primeira_coluna] = pd.to_datetime(
+						df[primeira_coluna].astype(str).str.strip(),
+						format='%d/%m/%Y',
+						errors='coerce'
+					)
+
+				if df[primeira_coluna].notna().all():
 					df = df.sort_values(by=primeira_coluna, ascending=True)
+
 			except Exception:
 				pass
 
