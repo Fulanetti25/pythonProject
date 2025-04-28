@@ -36,6 +36,7 @@ def fnc_calcula_diferenca(tabela1, tabela2):
 
     return {"Resultado": diferenca, 'Status_log': log_info, 'Detail_log': varl_detail}
 
+
 def main():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
@@ -53,8 +54,12 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
+        if not resultado.get('Sucesso', False):
+            logging.info("Falha", extra={"classe": "cls_AtualizaFonteOnline.py", "funcao": "main"})
+            return  # ou raise Exception("Falha ao executar prc_executa_online")
+
         for consulta_origem, consulta_destino in consultas:
-            resultado_valor = None  # ← inicia aqui
+            resultado_valor = None
             resultado = fnc_calcula_diferenca(consulta_origem, consulta_destino)
             print(resultado)
 

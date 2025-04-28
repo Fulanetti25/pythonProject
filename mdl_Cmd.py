@@ -6,3 +6,4 @@ breakpoint() # Ponto de parada
 
 # Meu IP Publico no .cmd
 curl ifconfig.me
+curl -4 ifconfig.me

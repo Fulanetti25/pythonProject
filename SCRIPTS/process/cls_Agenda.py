@@ -85,10 +85,7 @@ def main():
                 processos = json_caminho('Json_Processos')
                 info_processos = json_dados(os.path.join(processos['Diretorio'], processos['Arquivo']))
                 lista_processos = info_processos["processos"]
-                processos_filtrados = [processo for processo in lista_processos
-                                       if processo["Dia"] == dia_semana
-                                       or processo["Dia"] == "All"
-                                       or (processo["Dia"] == "Util" and dia_util)]
+                processos_filtrados = [processo for processo in lista_processos if processo["Dia"] == dia_semana or processo["Dia"] == "All" or (processo["Dia"] == "Util" and dia_util)]
 
                 # Inicia Execucao
                 if horarios_filtrados[0]["HorarioMinimo"] <= horario_atual.strftime("%H:%M") <= horarios_filtrados[0]["HorarioMaximo"]:
@@ -99,7 +96,7 @@ def main():
                                 exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
                                 exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
                                 exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
-                    desenhar_tela(term, proxima_execucao, processos_filtrados, False, True, False)
+                    desenhar_tela(term, proxima_execucao, processos_futuros if processos_futuros else processos_filtrados, False, True, False)
                     varg_erro = False
                 else:
                     print(f"Fora do horário permitido ({dia_semana}, das {horarios_filtrados[0]["HorarioMinimo"]} as {horarios_filtrados[0]["HorarioMaximo"]}). \nAguardando próximo intervalo.")
@@ -111,30 +108,30 @@ def main():
                     ultimo = fn_ultimo_log(processo['Classe'])
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
                     if processo['Classe'] != "N/A":
+
                         if processo["Frequencia"] == "Diario":
                             if processo['Predecessor'] != 'N/A':
                                 ultimo_predecessor = fn_ultimo_log(processo['Predecessor'])
-                                if ultimo_predecessor.date() == horario_atual.date():
-                                    if ultimo.date() != horario_atual.date():
-                                        while horario_processo <= horario_atual:
-                                            horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
-                                        processo['Horario'] = horario_processo.strftime("%H:%M")
+                                if ultimo_predecessor.date() == horario_atual.date() and ultimo.date() != horario_atual.date():
+                                    processo['Horario'] = horario_processo.strftime("%H:%M")
+                                else:
+                                    processo['Horario'] = "23:59"  # Horário impossível para impedir execução
                             else:
                                 if ultimo:
-                                    if horario_atual.date() != ultimo.date() and horario_processo < horario_atual:
-                                        while horario_processo <= horario_atual:
-                                            horario_processo = horario_processo + timedelta(hours=int(1), minutes=int(0))
+                                    if ultimo.date() != horario_atual.date():
                                         processo['Horario'] = horario_processo.strftime("%H:%M")
+                                    else:
+                                        processo['Horario'] = "23:59"
                                 else:
                                     processo['Horario'] = horario_processo.strftime("%H:%M")
+
                         if processo["Frequencia"] == "Intervalo":
                             if processo["Intervalo"] != "N/A":
                                 intervalo = timedelta(hours=int(processo['Intervalo'].split(":")[0]), minutes=int(processo['Intervalo'].split(":")[1]))
                                 while horario_processo <= horario_atual:
                                     horario_processo += intervalo
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
-                processos_futuros = [horario for horario in processos_filtrados if
-                                     horario["Horario"] >= datetime.now().strftime('%H:%M')]
+                processos_futuros = [horario for horario in processos_filtrados if horario["Horario"] >= datetime.now().strftime('%H:%M')]
                 if processos_futuros:
                     proximo_horario = min(processos_futuros, key=lambda x: x["Horario"])
                     proxima_execucao = f"{proximo_horario['Nome']}, {proximo_horario['Horario']}"

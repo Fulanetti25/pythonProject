@@ -69,7 +69,7 @@ def fnc_preparar_base():
 		if not os.path.exists(file_out):
 			df_base = pd.DataFrame(columns=['Conta', 'Data', 'Valor', 'Identificador', 'Descrição'])
 		else:
-			df_base = pd.read_csv(file_out, sep=';', dtype=str)
+			df_base = pd.read_csv(file_out, sep=',', dtype=str)
 
 		log_info = "F4"
 		for arquivo in os.listdir(file_dir):
@@ -82,12 +82,29 @@ def fnc_preparar_base():
 					conta_nome = "_".join(arquivo.split("_")[:2])
 					df.insert(0, 'Conta', conta_nome)
 
-					colunas_chave = ['Data', 'Valor', 'Identificador']
-					df_novos = df.merge(df_base[colunas_chave], on=colunas_chave, how='left', indicator=True)
-					df_novos = df_novos[df_novos['_merge'] == 'left_only'].drop(columns=['_merge'])
+					colunas_chave = ['Conta', 'Data', 'Valor', 'Identificador', 'Descrição']
 
+					# Faz o merge para saber quais linhas já existem
+					df_merged = df.merge(df_base[colunas_chave], on=colunas_chave, how='left', indicator=True)
+
+					# Inicializa um DataFrame vazio para novos registros
+					df_novos = pd.DataFrame(columns=df.columns)
+
+					# Percorre cada linha do DataFrame merged
+					for idx, row in df_merged.iterrows():
+						if row['_merge'] == 'left_only':
+							# Se não existe na base, adiciona em df_novos
+							df_novos = pd.concat([df_novos, row[df.columns].to_frame().T], ignore_index=True)
+							# Remove esta linha do df original
+							df.drop(idx, inplace=True)
+
+					# Se houver novos registros, salva no banco de extrato
 					if not df_novos.empty:
-						df_novos.to_csv(file_out, sep=';', mode='a', header=not os.path.exists(file_out), index=False)
+						df_novos.to_csv(file_out, sep=',', mode='a', header=not os.path.exists(file_out), index=False)
+
+					# Se o df (agora atualizado) ainda tem linhas, sobrescreve o arquivo csv original
+					if not df.empty:
+						df.to_csv(file_path, sep=',', index=False)
 					else:
 						os.remove(file_path)
 
@@ -115,7 +132,7 @@ def fnc_saldos_por_periodo():
 
 	try:
 		log_info = "F2"
-		df = pd.read_csv(file_out, sep=';', dtype=str)
+		df = pd.read_csv(file_out, sep=',', dtype=str)
 		df['Data'] = pd.to_datetime(df['Data'], format="%d/%m/%Y", errors='coerce')
 		df['Valor'] = pd.to_numeric(df['Valor'].str.replace(',', '.'), errors='coerce')
 

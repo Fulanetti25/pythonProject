@@ -100,6 +100,7 @@ def prc_executa_online(sql_query, params, modo):
 		if modo not in ['SELECT', 'COUNT']:
 			fnc_salvar_falha('UMBLER', conn_log, sql_query, params)
 		log_info = "F99"
+		raise Exception(varl_detail)
 
 	finally:
 		if conn_obj:

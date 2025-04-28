@@ -7,6 +7,17 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_DataBases import prc_executa_local
 
 
+def fnc_padronizar_datas(serie_datas):
+	datas = pd.to_datetime(serie_datas, errors='coerce', utc=True)
+	nao_convertidas = serie_datas[datas.isna()]
+	if not nao_convertidas.empty:
+		datas_corrigidas = pd.to_datetime(nao_convertidas, errors='coerce', dayfirst=True, utc=True)
+		datas.update(datas_corrigidas)
+	datas = datas.dt.tz_localize(None)
+
+	return datas
+
+
 def fnc_projetos_por_periodo():
 	log_info = "F1"
 	varl_detail = None
@@ -19,9 +30,10 @@ def fnc_projetos_por_periodo():
 
 		resultado = prc_executa_local('dbo.PRD_PROJETOS', None, "SELECT")
 		df_raw = resultado["Resultado"]['Resultado']
+		df_raw.to_csv(r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\saida.csv', sep=';', mode='w', index=False)
+
 		df = pd.DataFrame(df_raw) if not isinstance(df_raw, pd.DataFrame) else df_raw
-		df['DATA_CRIACAO'] = pd.to_datetime(df['CNTT_DATA'], errors='coerce', dayfirst=True)
-		df['DATA_CRIACAO'] = df['DATA_CRIACAO'].dt.tz_localize(None)
+		df['DATA_CRIACAO'] = fnc_padronizar_datas(df['CNTT_DATA'])
 
 		periodos = []
 		for data in df['DATA_CRIACAO']:
@@ -47,6 +59,7 @@ def fnc_projetos_por_periodo():
 		df_base = df.copy()
 		agrupado = df_base.groupby('PERIODO')
 		df_resultado = pd.DataFrame()
+
 		df_resultado['total Leads'] = agrupado.size()
 		filtro_validos = df['PROJ_APROVAÇÃO'].str.startswith(('2', '3')) & (df['PROJ_APROVAÇÃO'] != '3 - INVÁLIDO')
 		df_validos = df[filtro_validos]
