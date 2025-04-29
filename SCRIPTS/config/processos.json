@@ -56,14 +56,14 @@
       "Descricao": "Atualizar as fontes no banco de dados local."
     },
     {
-      "Horario": "10:10",
+      "Horario": "10:15",
       "Frequencia": "Diario",
       "Intervalo": "N/A",
       "Dia": "All",
       "Classe": "cls_AtualizaFonteOnline",
       "Nome": "Atualizar fontes de dados do Umbler",
       "Processo": "fontes_online",
-      "Predecessor": "N/A",
+      "Predecessor": "cls_AtualizaFonteLocal",
       "Descricao": "Atualizar as fontes no banco de dados online."
     },
     {

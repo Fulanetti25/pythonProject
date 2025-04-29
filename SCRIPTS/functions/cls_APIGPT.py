@@ -84,6 +84,7 @@ def ler_sumarizar_gpt_log():
     print(f"\nResumo do consumo de tokens competencia {mes_atual}")
     print("=" * 80)
     print(f"{'Modelo':<20} {'Entrada':>10} {'Saída':>10} {'Total':>10} {'Custo (USD)':>20}")
+    print(f"ATENÇÃO! OS CRÉDITOS EXPIRAM EM 30/06/2026")
     print("-" * 80)
 
     for modelo, tokens in resumo_tokens.items():

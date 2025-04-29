@@ -107,23 +107,35 @@ def main():
                 for processo in processos_filtrados:
                     ultimo = fn_ultimo_log(processo['Classe'])
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
-                    if processo['Classe'] != "N/A":
 
+                    if processo['Classe'] != "N/A":
                         if processo["Frequencia"] == "Diario":
                             if processo['Predecessor'] != 'N/A':
+                                # SE TIVER PREDECESSOR
                                 ultimo_predecessor = fn_ultimo_log(processo['Predecessor'])
                                 if ultimo_predecessor.date() == horario_atual.date() and ultimo.date() != horario_atual.date():
+                                    # PREDECESSOR FOI EXECUTADO HOJE E PROCESSO NÃO FOI EXECUTADO HOJE
+                                    intervalo = timedelta(hours=int(1), minutes=int(0))
+                                    while horario_processo <= horario_atual:
+                                        horario_processo += intervalo
                                     processo['Horario'] = horario_processo.strftime("%H:%M")
                                 else:
+                                    # PREDECESSOR NÃO FOI EXECUTADO HOJE
                                     processo['Horario'] = "23:59"  # Horário impossível para impedir execução
                             else:
+                                # SE NÃO TIVER PREDECESSOR
                                 if ultimo:
+                                    # NÃO FOI EXECUTADO HOJE
                                     if ultimo.date() != horario_atual.date():
+                                        intervalo = timedelta(hours=int(1), minutes=int(0))
+                                        while horario_processo <= horario_atual:
+                                            horario_processo += intervalo
                                         processo['Horario'] = horario_processo.strftime("%H:%M")
                                     else:
                                         processo['Horario'] = "23:59"
                                 else:
-                                    processo['Horario'] = horario_processo.strftime("%H:%M")
+                                    # FOI EXECUTADO HOJE
+                                    processo['Horario'] = "23:59"
 
                         if processo["Frequencia"] == "Intervalo":
                             if processo["Intervalo"] != "N/A":
@@ -131,9 +143,11 @@ def main():
                                 while horario_processo <= horario_atual:
                                     horario_processo += intervalo
                                 processo['Horario'] = horario_processo.strftime("%H:%M")
-                processos_futuros = [horario for horario in processos_filtrados if horario["Horario"] >= datetime.now().strftime('%H:%M')]
+
+                processos_futuros = [horario for horario in processos_filtrados]
                 if processos_futuros:
-                    proximo_horario = min(processos_futuros, key=lambda x: x["Horario"])
+                    proximo_processo = [horario for horario in processos_filtrados if horario["Horario"] >= datetime.now().strftime('%H:%M')]
+                    proximo_horario = min(proximo_processo, key=lambda x: x["Horario"])
                     proxima_execucao = f"{proximo_horario['Nome']}, {proximo_horario['Horario']}"
                 else:
                     proxima_execucao = "Nenhuma execução programada."

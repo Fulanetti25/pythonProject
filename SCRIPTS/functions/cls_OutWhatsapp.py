@@ -113,7 +113,7 @@ def fnc_envia_whats(driver, numero, mensagem, anexo):
 			xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
 			big_arrow = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
 			big_arrow.click()
-			time.sleep(5)
+			time.sleep(10)
 		else:
 			log_info = "F7"
 			objeto = 'SEND_ARROW'

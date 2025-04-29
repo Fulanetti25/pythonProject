@@ -157,8 +157,8 @@ def tela_inferior_dir(term):
 
     resultado_pj = fnc_saldos_por_periodo()
     saldos_pj = resultado_pj["Resultado"]["saldo"]
-    resultado_psm = fnc_projetos_por_periodo()
-    saldos_psm = resultado_psm["Resultado"]
+    # resultado_psm = fnc_projetos_por_periodo()
+    # saldos_psm = resultado_psm["Resultado"]
 
     # Título da seção
     exibir_texto(term, col_base, linha_base, "KPIs Operacionais:", estilo=term.underline + term.bold_red)
@@ -173,10 +173,11 @@ def tela_inferior_dir(term):
     # Definição dos KPIs e seus valores
     kpis = [
         {"nome": "NU_DAN_PJ", "valores": [saldos_pj["NU_DAN_PJ"].get(col, 0.0) for col in colunas_kpi]},
-        {"nome": "NU_FULA_PJ", "valores": [saldos_pj["NU_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]},
-        {"nome": "total Leads", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'total Leads'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
-        {"nome": "Leads Válidos", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'Leads Válidos'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
-        {"nome": "% Sucesso COM", "valores": [round(saldos_psm.loc[saldos_psm['PERIODO'] == col, '% Sucesso COM'].values[0], 2) if col in saldos_psm['PERIODO'].values else 0.0 for col in colunas_kpi]}
+        {"nome": "PB_DAN_PJ", "valores": [saldos_pj["PB_DAN_PJ"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "NU_FULA_PJ", "valores": [saldos_pj["NU_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]}
+        # {"nome": "total Leads", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'total Leads'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
+        # {"nome": "Leads Válidos", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'Leads Válidos'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
+        # {"nome": "% Sucesso COM", "valores": [round(saldos_psm.loc[saldos_psm['PERIODO'] == col, '% Sucesso COM'].values[0], 2) if col in saldos_psm['PERIODO'].values else 0.0 for col in colunas_kpi]}
     ]
 
     for kpi_idx, kpi in enumerate(kpis):

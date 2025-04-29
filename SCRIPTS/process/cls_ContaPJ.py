@@ -75,39 +75,74 @@ def fnc_preparar_base():
 		for arquivo in os.listdir(file_dir):
 			file_path = os.path.join(file_dir, arquivo)
 			if os.path.isfile(file_path) and arquivo.lower().endswith('.csv'):
-				df = pd.read_csv(file_path, sep=',', dtype=str)
-				if df.shape[0] == 0:
-					os.remove(file_path)
-				else:
-					conta_nome = "_".join(arquivo.split("_")[:2])
-					df.insert(0, 'Conta', conta_nome)
-
-					colunas_chave = ['Conta', 'Data', 'Valor', 'Identificador', 'Descrição']
-
-					# Faz o merge para saber quais linhas já existem
-					df_merged = df.merge(df_base[colunas_chave], on=colunas_chave, how='left', indicator=True)
-
-					# Inicializa um DataFrame vazio para novos registros
-					df_novos = pd.DataFrame(columns=df.columns)
-
-					# Percorre cada linha do DataFrame merged
-					for idx, row in df_merged.iterrows():
-						if row['_merge'] == 'left_only':
-							# Se não existe na base, adiciona em df_novos
-							df_novos = pd.concat([df_novos, row[df.columns].to_frame().T], ignore_index=True)
-							# Remove esta linha do df original
-							df.drop(idx, inplace=True)
-
-					# Se houver novos registros, salva no banco de extrato
-					if not df_novos.empty:
-						df_novos.to_csv(file_out, sep=',', mode='a', header=not os.path.exists(file_out), index=False)
-
-					# Se o df (agora atualizado) ainda tem linhas, sobrescreve o arquivo csv original
-					if not df.empty:
-						df.to_csv(file_path, sep=',', index=False)
-					else:
+				if arquivo.lower().startswith('nu'):
+					df = pd.read_csv(file_path, sep=',', dtype=str)
+					if df.shape[0] == 0:
 						os.remove(file_path)
+					else:
+						conta_nome = "_".join(arquivo.split("_")[:2])
+						df.insert(0, 'Conta', conta_nome)
 
+						colunas_chave = ['Conta', 'Data', 'Valor', 'Identificador', 'Descrição']
+
+						# Faz o merge para saber quais linhas já existem
+						df_merged = df.merge(df_base[colunas_chave], on=colunas_chave, how='left', indicator=True)
+
+						# Inicializa um DataFrame vazio para novos registros
+						df_novos = pd.DataFrame(columns=df.columns)
+
+						# Percorre cada linha do DataFrame merged
+						for idx, row in df_merged.iterrows():
+							if row['_merge'] == 'left_only':
+								# Se não existe na base, adiciona em df_novos
+								df_novos = pd.concat([df_novos, row[df.columns].to_frame().T], ignore_index=True)
+								# Remove esta linha do df original
+								df.drop(idx, inplace=True)
+
+						# Se houver novos registros, salva no banco de extrato
+						if not df_novos.empty:
+							df_novos.to_csv(file_out, sep=',', mode='a', header=not os.path.exists(file_out), index=False)
+
+						# Se o df (agora atualizado) ainda tem linhas, sobrescreve o arquivo csv original
+						if not df.empty:
+							df.to_csv(file_path, sep=',', index=False)
+						else:
+							os.remove(file_path)
+				elif arquivo.lower().startswith('pagbank_'):
+					df = pd.read_csv(file_path, sep=';', dtype=str)
+					if df.shape[0] == 0:
+						os.remove(file_path)
+					else:
+						conta_nome = arquivo.replace('.csv','').upper()
+						df.insert(0, 'Conta', conta_nome)
+						df.rename(columns={'CODIGO DA TRANSACAO': 'Identificador'}, inplace=True)
+						df.rename(columns={'DATA': 'Data'}, inplace=True)
+						df.rename(columns={'VALOR': 'Valor'}, inplace=True)
+						df['Valor'] = df['Valor'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float).map(lambda x: f"{x:.2f}")
+
+						df['Descrição'] = df.pop('TIPO').astype(str) + ' - ' + df.pop('DESCRICAO').astype(str)
+						colunas_chave = ['Conta', 'Data', 'Valor', 'Identificador', 'Descrição']
+						df = df[colunas_chave + [col for col in df.columns if col not in colunas_chave]]
+
+						# Faz o merge para saber quais linhas já existem e Inicializa um DataFrame vazio para novos registros
+						df_merged = df.merge(df_base[colunas_chave], on=colunas_chave, how='left', indicator=True)
+						df_novos = pd.DataFrame(columns=df.columns)
+						for idx, row in df_merged.iterrows():
+							if row['_merge'] == 'left_only':
+								# Se não existe na base, adiciona em df_novos
+								df_novos = pd.concat([df_novos, row[df.columns].to_frame().T], ignore_index=True)
+								# Remove esta linha do df original
+								df.drop(idx, inplace=True)
+
+						# Se houver novos registros, salva no banco de extrato
+						if not df_novos.empty:
+							df_novos.to_csv(file_out, sep=',', mode='a', header=not os.path.exists(file_out), index=False)
+
+						# Se o df (agora atualizado) ainda tem linhas, sobrescreve o arquivo csv original
+						if not df.empty:
+							df.to_csv(file_path, sep=',', index=False)
+						else:
+							os.remove(file_path)
 		log_info = "F0"
 
 	except Exception as e:
@@ -126,13 +161,15 @@ def fnc_saldos_por_periodo():
 	log_info = "F1"
 	varl_detail = None
 	df_resultados = {'receitas': {}, 'despesas': {}, 'saldo': {}}
-	contas_map = {'NU_2152502229': 'NU_FULA_PJ', 'NU_500633351': 'NU_DAN_PJ'}
+	contas_map = {'NU_2152502229': 'NU_FULA_PJ', 'NU_500633351': 'NU_DAN_PJ', 'PAGBANK_DAN': 'PB_DAN_PJ', 'PAGBANK_FULA': 'PB_FULA_PJ'}
 	caminho_base = json_caminho('Banco_Extrato')
-	file_out = os.path.join(caminho_base['Diretorio'], caminho_base['Arquivo'])
+	file_contas = os.path.join(caminho_base['Diretorio'], caminho_base['Arquivo'])
+	caminho_base = json_caminho('Notas_Extrato')
+	file_notas = os.path.join(caminho_base['Diretorio'], caminho_base['Arquivo'])
 
 	try:
 		log_info = "F2"
-		df = pd.read_csv(file_out, sep=',', dtype=str)
+		df = pd.read_csv(file_contas, sep=',', dtype=str)
 		df['Data'] = pd.to_datetime(df['Data'], format="%d/%m/%Y", errors='coerce')
 		df['Valor'] = pd.to_numeric(df['Valor'].str.replace(',', '.'), errors='coerce')
 
@@ -149,6 +186,7 @@ def fnc_saldos_por_periodo():
 			fim_mes = ref.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)
 			lista_periodos[f'M-{i}'] = (ref, fim_mes)
 
+		log_info = "F3"
 		for conta_cod, conta_nome in contas_map.items():
 			df_conta = df[df['Conta'] == conta_cod]
 			for nome, (data_ini, data_fim) in lista_periodos.items():
@@ -161,6 +199,12 @@ def fnc_saldos_por_periodo():
 					if conta_nome not in df_resultados[tipo]:
 						df_resultados[tipo][conta_nome] = {}
 					df_resultados[tipo][conta_nome][nome] = round(valor, 2)
+
+		log_info = "F4"
+
+		# df = pd.read_excel(file_contas, dtype=str, engine='openpyxl')
+		# print(df)
+		# breakpoint()
 
 		log_info = "F0"
 
@@ -188,14 +232,6 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado1 = prc_limpar_arquivos()
-		exec_info += f"\t\t\t\tResultado: {resultado1['Resultado']}\n"
-		exec_info += f"\t\t\t\tStatus: {resultado1['Status_log']}\n"
-		exec_info += f"\t\t\t\tDetail: {resultado1['Detail_log']}\n"
-		resultado2 = fnc_preparar_base()
-		exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
-		exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
-		exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
 		resultado3 = fnc_saldos_por_periodo()
 		exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"

@@ -17,8 +17,7 @@ def etl_ExportaProjetos():
 	file_name = os.path.join(file_dir, caminhos['Arquivo'])
 
 	excel = win32com.client.Dispatch("Excel.Application")
-	varl_aberto = any(wb.FullName == r"C:\Users\paulo\OneDrive\Documentos\ADM PSM.xlsb" for wb in
-					  win32com.client.Dispatch("Excel.Application").Workbooks)
+	varl_aberto = any(wb.FullName == r"C:\Users\paulo\OneDrive\Documentos\ADM PSM.xlsb" for wb in win32com.client.Dispatch("Excel.Application").Workbooks)
 	workbook = excel.Workbooks.Open(r"C:\Users\paulo\OneDrive\Documentos\ADM PSM.xlsb")
 	sheet = workbook.Sheets("PROJETOS")
 	try:

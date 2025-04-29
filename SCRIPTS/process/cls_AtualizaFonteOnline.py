@@ -16,6 +16,7 @@ def fnc_calcula_diferenca(tabela1, tabela2):
         log_info = "F2"
         contagem1 = prc_executa_local(tabela1, None, "COUNT")
         contagem2 = prc_executa_online(tabela2, None, "COUNT")
+        print(contagem2)
 
         if contagem1['Status_log'] != 'F0' or contagem2['Status_log'] != 'F0':
             return {'Resultado': 0, 'Status_log': 'F99', 'Detail_log': f"Erro ao consultar contagens: Origem({contagem1['Detail_log']}), Destino({contagem2['Detail_log']})"}
@@ -54,10 +55,6 @@ def main():
 
     exec_info += "\t\tMI\n"
     try:
-        if not resultado.get('Sucesso', False):
-            logging.info("Falha", extra={"classe": "cls_AtualizaFonteOnline.py", "funcao": "main"})
-            return  # ou raise Exception("Falha ao executar prc_executa_online")
-
         for consulta_origem, consulta_destino in consultas:
             resultado_valor = None
             resultado = fnc_calcula_diferenca(consulta_origem, consulta_destino)
