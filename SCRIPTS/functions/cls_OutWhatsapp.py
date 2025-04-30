@@ -5,6 +5,7 @@ import psutil
 import os
 import logging
 import pyautogui
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,6 +14,117 @@ from selenium.webdriver.common.by import By
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_limpa, json_atualiza
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+
+
+def prc_executa_fila(fila):
+	log_info = "F1"
+	varl_detail = None
+	conn_obj = None
+
+	try:
+		log_info = "F2"
+		conexao = fnc_connect_whats()
+		conn_obj = conexao.get("Resultado")
+		conn_log = conexao.get("Detail_log")
+
+		log_info = "F3"
+		fnc_envia_fila(conn_obj, fila)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+
+	finally:
+		fnc_close_whats(conn_obj)
+
+	return {"Resultado": "Executado", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_envia_fila(driver, fila):
+	log_info = "F1"
+	varl_detail = None
+	result = []
+	objeto = None
+	mapa_objetos = None
+	xpath = None
+	driver.get("https://web.whatsapp.com")
+	time.sleep(10)
+
+	try:
+		for item in fila:
+			numero = item['numero']
+			mensagem = item['mensagem']
+			anexo = item['anexo']
+
+			log_info = "F2"
+			objeto = 'SEARCH_BOX'
+			mapa_objetos = json_caminho('Json_Mapa_Objetos')
+			dados_objetos = json_dados(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']))
+			xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+			search_box = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+			search_box.click()
+			search_box.send_keys(numero)
+			search_box.send_keys(Keys.ENTER)
+
+			log_info = "F3"
+			objeto = 'MESSAGE_BOX'
+			xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+			message_box = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+			message_box.send_keys(mensagem)
+
+			if anexo:
+				log_info = "F4"
+				objeto = 'PLUS_BUTTON'
+				xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+				plus_button = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+				plus_button.click()
+
+				nome, extensao = os.path.splitext(anexo)
+				if extensao == '.vcf':
+					log_info = "F5.1"
+					objeto = 'DOC_OPTION'
+				elif extensao == '.png':
+					log_info = "F5.2"
+					objeto = 'IMG_OPTION'
+
+				xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+				opt = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+				opt.click()
+
+				time.sleep(5)
+				os.system(f'echo {anexo} | clip')
+				pyautogui.hotkey('ctrl', 'v')
+				pyautogui.press('enter')
+
+			if anexo:
+				log_info = "F6"
+				objeto = 'BIG_ARROW'
+			else:
+				log_info = "F7"
+				objeto = 'SEND_ARROW'
+
+			xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == objeto), None)
+			arrow = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, xpath)))
+			arrow.click()
+			time.sleep(5 if not anexo else 10)
+
+			result.append(f"Mensagem enviada para {numero}")
+
+	except Exception as e:
+		print(f"Elemento {objeto} com XPath '{xpath}' não encontrado!")
+		novo_xpath = fnc_escapa_xpath(input("Digite o XPath manualmente: ").strip())
+		json_atualiza(os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo']), 'objetos', objeto, 'Xpath', novo_xpath)
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+
+	finally:
+		pass
+
+	return {"Resultado": result, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def prc_executa_whats(numero, mensagem, anexo):
@@ -259,6 +371,10 @@ def fnc_reprocessar_falha():
 	return {"Resultado": "Pilha Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def fnc_escapa_xpath(xpath_raw: str) -> str:
+	return xpath_raw.replace('"', '\\"')
+
+
 def fnc_get_element_xpath(driver, element):
 	xpath = driver.execute_script(
 		"function absoluteXPath(element) {"
@@ -298,6 +414,69 @@ def fnc_get_element_xpath(driver, element):
 	return xpath
 
 
+def fnc_SalvarFila(numero, mensagem, anexo):
+	log_info = "F1"
+	varl_detail = None
+	falhas_sql = json_caminho('Json_Fila_WA')
+	falhas_dados = json_dados(os.path.join(falhas_sql['Diretorio'], falhas_sql['Arquivo']))
+
+	try:
+		log_info = "F2"
+		pilha = falhas_dados if falhas_dados else []
+		fila = {
+			"Data": datetime.now().isoformat(),
+			"numero": numero,
+			"mensagem": mensagem,
+			"anexo": anexo,
+		}
+
+		if fila not in pilha:
+			pilha.append(fila)
+			json_registra(pilha, arquivo=os.path.join(falhas_sql['Diretorio'], falhas_sql['Arquivo']))
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": "Inserido na pilha", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_ReprocessarFila():
+	log_info = "F1"
+	varl_detail = None
+	filas_sql = json_caminho('Json_Fila_WA')
+	filas_path = os.path.join(filas_sql['Diretorio'], filas_sql['Arquivo'])
+
+	try:
+		log_info = "F2"
+		pilha = json_dados(filas_path)
+
+		log_info = "F3"
+		prc_executa_fila(pilha)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		if log_info == "F0":
+			pass
+			# json_limpa(filas_path)
+
+	return {"Resultado": "Pilha Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
@@ -306,16 +485,11 @@ def main():
 
 	exec_info += "\tGI\n"
 	varg_erro = None
-	numero = "+5511964821360"
-	mensagem = "Olá! Esta é uma mensagem automática."
-	# anexo = r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\contatos\202412 CLI TEIXEIRA.vcf'
-	anexo = r'G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\grafico_gantt.png'
 	exec_info += "\tGF\n"
 
 	exec_info += "\t\tMI\n"
 	try:
-		# resultado = prc_executa_whats(numero, mensagem, None)
-		resultado = prc_executa_whats(numero, mensagem, anexo)
+		resultado = fnc_ReprocessarFila()
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

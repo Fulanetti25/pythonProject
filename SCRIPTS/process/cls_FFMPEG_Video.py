@@ -382,7 +382,7 @@ def fnc_montar_teste(caminho, arquivo, legenda, inferior, leg_detalhe):
 			legenda_clips = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda), inicio_legenda, size, duracao_maxima=video_sup.duration)
 			compose_teste = CompositeVideoClip([compose_01, *legenda_clips])
 			nome_arquivo = os.path.join(pasta_destino, f"t_legenda {inicio_legenda} {arquivo}.mp4")
-			compose_teste.write_videofile(nome_arquivo, codec="libx264", fps=24)
+			compose_teste.write_videofile(nome_arquivo, codec="libx264", fps=6)
 
 		log_info = "F0"
 
@@ -703,7 +703,7 @@ def prc_processa_fut():
 
 
 def main():
-	prc_processa_dmb()
+	prc_teste_dmb()
 
 
 if __name__ == "__main__":

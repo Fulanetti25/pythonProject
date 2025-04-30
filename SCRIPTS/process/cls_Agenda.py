@@ -17,12 +17,13 @@ from SCRIPTS.process.cls_LimpaLogs import main as limpeza_logs
 from SCRIPTS.process.cls_AtualizaFonteLocal import main as fontes_local
 from SCRIPTS.process.cls_AtualizaFonteOnline import main as fontes_online
 from SCRIPTS.process.cls_LimpaGoogleDrive import main as limpeza_drive
-from SCRIPTS.process.cls_FFMPEG_Video import main as processa_videos
-from SCRIPTS.process.cls_FFMPEG_Video import main as processa_tbt
+from SCRIPTS.process.cls_FFMPEG_Video import prc_teste_dmb, prc_processa_dmb, prc_processa_fut
+from SCRIPTS.process.cls_ContaPJ import main as report_financeiro
 
 
 def etl_VerificaAgendamento(processo, horario_atual):
     return processo['Horario'] == horario_atual.strftime("%H:%M")
+
 
 def etl_ExecutaProcesso(processo,proxima_execucao):
     log_info = "F1"
@@ -53,6 +54,7 @@ def etl_ExecutaProcesso(processo,proxima_execucao):
         pass
 
     return {"Resultado": str(nome_processo), 'Status_log': log_info, 'Detail_log': varl_detail}
+
 
 def main():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
@@ -107,9 +109,8 @@ def main():
                 for processo in processos_filtrados:
                     ultimo = fn_ultimo_log(processo['Classe'])
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
-
                     if processo['Classe'] != "N/A":
-                        if processo["Frequencia"] == "Diario":
+                        if processo["Frequencia"] == "Diario" or processo["Frequencia"] == "Semanal":
                             if processo['Predecessor'] != 'N/A':
                                 # SE TIVER PREDECESSOR
                                 ultimo_predecessor = fn_ultimo_log(processo['Predecessor'])
@@ -163,6 +164,7 @@ def main():
         exec_info += "LF\n"
         log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
         logging.shutdown()
+
 
 if __name__ == "__main__":
     main()

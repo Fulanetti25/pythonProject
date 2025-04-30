@@ -92,12 +92,12 @@
       "Horario": "07:40",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Tuesday",
-      "Classe": "N/A",
+      "Dia": "Monday",
+      "Classe": "cls_ContaPJ",
       "Nome": "Relatório Contas PJ",
-      "Processo": "N/A",
+      "Processo": "report_financeiro",
       "Predecessor": "N/A",
-      "Descricao": "Relatório diario em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
+      "Descricao": "Relatório semanal em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
     },
     {
       "Horario": "07:50",
@@ -169,7 +169,7 @@
       "Horario": "12:30",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Saturday",
+      "Dia": "Wednesday",
       "Classe": "cls_FFMPEG_Video",
       "Nome": "Pré-Teste Drumeibes",
       "Processo": "prc_teste_dmb",

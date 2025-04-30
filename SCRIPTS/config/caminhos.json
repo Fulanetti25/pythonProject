@@ -2,6 +2,7 @@
     "caminhos": [
       {"Nome": "Log_Acompanhamento","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "python.log"},
       {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas_sql.json"},
+	  {"Nome": "Json_Fila_WA","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "fila_wa.json"},
       {"Nome": "Base_Projetos_Excel","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "projetos.csv"},
       {"Nome": "Base_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "gantt.csv"},
       {"Nome": "Imagem_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "grafico_gantt.png"},
@@ -11,7 +12,7 @@
       {"Nome": "Arquivo_PF","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\","Arquivo": "ADM FULANETTI.xlsm"},
       {"Nome": "Extrato_PJ","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\extratos_nu\\","Arquivo": ""},
       {"Nome": "Banco_Extrato","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "banco_extrato.csv"},
-      {"Nome": "Notas_Extrato","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "notas_extrato.xlsx"},
+      {"Nome": "Notas_Extrato","Diretorio": "G:\\Meu Drive\\PSM\\02 - FINANCEIRO\\NOTAS","Arquivo": "notas_extrato.csv"},
       {"Nome": "Entrada_GoPro","Diretorio": "C:\\Users\\paulo\\Downloads\\TEMP\\","Arquivo": ""},
       {"Nome": "Chrome_Profile","Diretorio": "C:\\Users\\Paulo\\AppData\\Local\\Google\\Chrome\\User Data\\","Arquivo": "Profile 1"},
       {"Nome": "Json_Caminhos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "caminhos.json"},

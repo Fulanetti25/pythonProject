@@ -157,6 +157,8 @@ def tela_inferior_dir(term):
 
     resultado_pj = fnc_saldos_por_periodo()
     saldos_pj = resultado_pj["Resultado"]["saldo"]
+    notas_pj = resultado_pj["Resultado"]["notas"]
+
     # resultado_psm = fnc_projetos_por_periodo()
     # saldos_psm = resultado_psm["Resultado"]
 
@@ -174,7 +176,12 @@ def tela_inferior_dir(term):
     kpis = [
         {"nome": "NU_DAN_PJ", "valores": [saldos_pj["NU_DAN_PJ"].get(col, 0.0) for col in colunas_kpi]},
         {"nome": "PB_DAN_PJ", "valores": [saldos_pj["PB_DAN_PJ"].get(col, 0.0) for col in colunas_kpi]},
-        {"nome": "NU_FULA_PJ", "valores": [saldos_pj["NU_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]}
+        {"nome": "NU_FULA_PJ", "valores": [saldos_pj["NU_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "PB_FULA_PJ", "valores": [saldos_pj["PB_FULA_PJ"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "SALDO CONTA TOTAL", "valores": [saldos_pj["SALDO CONTA TOTAL"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "NF_DAN", "valores": [notas_pj["NF_DAN"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "NF_FULA EMT", "valores": [notas_pj["NF_FULA EMT"].get(col, 0.0) for col in colunas_kpi]},
+        {"nome": "NF_FULA RCB", "valores": [notas_pj["NF_FULA RCB"].get(col, 0.0) for col in colunas_kpi]}
         # {"nome": "total Leads", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'total Leads'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
         # {"nome": "Leads Válidos", "valores": [int(saldos_psm.loc[saldos_psm['PERIODO'] == col, 'Leads Válidos'].values[0]) if col in saldos_psm['PERIODO'].values else 0 for col in colunas_kpi]},
         # {"nome": "% Sucesso COM", "valores": [round(saldos_psm.loc[saldos_psm['PERIODO'] == col, '% Sucesso COM'].values[0], 2) if col in saldos_psm['PERIODO'].values else 0.0 for col in colunas_kpi]}
@@ -182,10 +189,11 @@ def tela_inferior_dir(term):
 
     for kpi_idx, kpi in enumerate(kpis):
         linha_base += 1
+        if kpi_idx == 5:
+            linha_base += 1  # insere linha em branco antes do 6º KPI
         exibir_texto(term, col_base, linha_base, kpi["nome"], estilo=term.bold_cyan)
         for i, valor in enumerate(kpi["valores"]):
-            exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, str(valor),
-                         estilo=term.bold_white)
+            exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, str(valor), estilo=term.bold_white)
 
 
 def desenhar_tela(term, proxima_execucao, processos_filtrados, fake, tempo, executando):

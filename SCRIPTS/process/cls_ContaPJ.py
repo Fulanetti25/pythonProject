@@ -9,6 +9,7 @@ from dateutil.relativedelta import relativedelta
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+from SCRIPTS.functions.cls_OutWhatsapp import fnc_SalvarFila
 
 
 def fnc_convert_to_float(obj):
@@ -187,6 +188,7 @@ def fnc_saldos_por_periodo():
 			lista_periodos[f'M-{i}'] = (ref, fim_mes)
 
 		log_info = "F3"
+		# Totalizadores de CONTAS
 		for conta_cod, conta_nome in contas_map.items():
 			df_conta = df[df['Conta'] == conta_cod]
 			for nome, (data_ini, data_fim) in lista_periodos.items():
@@ -201,10 +203,39 @@ def fnc_saldos_por_periodo():
 					df_resultados[tipo][conta_nome][nome] = round(valor, 2)
 
 		log_info = "F4"
+		# Totalizador: SALDO CONTA TOTAL
+		df_resultados['saldo']['SALDO CONTA TOTAL'] = {}
 
-		# df = pd.read_excel(file_contas, dtype=str, engine='openpyxl')
-		# print(df)
-		# breakpoint()
+		for periodo in lista_periodos.keys():
+			soma_total = 0
+			for conta_nome in ['NU_FULA_PJ', 'NU_DAN_PJ', 'PB_DAN_PJ', 'PB_FULA_PJ']:
+				valor = df_resultados['saldo'].get(conta_nome, {}).get(periodo, 0)
+				soma_total += valor
+			df_resultados['saldo']['SALDO CONTA TOTAL'][periodo] = round(soma_total, 2)
+
+		log_info = "F5"
+		# Totalizador: NOTAS FISCAIS
+		df = pd.read_csv(file_notas, sep=',', dtype=str)
+
+		df['GERACAO'] = pd.to_datetime(df['GERACAO'], format="%d/%m/%Y", errors='coerce')
+		df['VALOR'] = pd.to_numeric(df['VALOR'].str.replace(',', '.'), errors='coerce')
+		df = df.dropna(subset=['GERACAO', 'VALOR'])
+
+		df_resultados['notas'] = {}  # Evita erro se chave ainda não existir
+
+		agrupadores = {
+			'NF_DAN': (df['CONTA'] == 'NF_DAN'),
+			'NF_FULA EMT': (df['CONTA'] == 'NF_FULA') & (df['TIPO'] == 'EMITIDA'),
+			'NF_FULA RCB': (df['CONTA'] == 'NF_FULA') & (df['TIPO'] == 'RECEBIDA')
+		}
+
+		for nome, filtro in agrupadores.items():
+			df_filtrado = df[filtro]
+			df_resultados['notas'][nome] = {}
+			for periodo_nome, (data_ini, data_fim) in lista_periodos.items():
+				df_periodo = df_filtrado[(df_filtrado['GERACAO'] >= pd.to_datetime(data_ini)) &(df_filtrado['GERACAO'] <= pd.to_datetime(data_fim))]
+				soma = df_periodo['VALOR'].sum()
+				df_resultados['notas'][nome][periodo_nome] = round(soma, 2)
 
 		log_info = "F0"
 
@@ -232,10 +263,26 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado3 = fnc_saldos_por_periodo()
-		exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
-		exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"
-		exec_info += f"\t\t\t\tDetail: {resultado3['Detail_log']}\n"
+		resultado = fnc_saldos_por_periodo()
+		res = resultado['Resultado']
+
+		# Captura dos valores desejados
+		saldo_total = res['saldo'].get('SALDO CONTA TOTAL', {}).get('ATUAL', 0)
+		nf_dan = res['notas'].get('NF_DAN', {}).get('MTD', 0)
+		nf_fula_emt = res['notas'].get('NF_FULA EMT', {}).get('MTD', 0)
+
+		# Montagem da mensagem
+		msg = (
+			f"💰 Saldo total atual: R$ {saldo_total:,.2f}\n"
+			f"📄 NF Dan (MTD): R$ {nf_dan:,.2f}\n"
+			f"📄 NF Fula (MTD): R$ {nf_fula_emt:,.2f}"
+		)
+
+		fnc_SalvarFila(numero = "+5511964821360", mensagem=msg, anexo = None)
+
+		exec_info += f"\t\t\t\tMensagem enviada: {msg}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 
 		exec_info += "\t\tMF\n"
 		varg_erro = False

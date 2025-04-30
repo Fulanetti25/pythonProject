@@ -6,7 +6,7 @@
         },
         {
             "Nome": "MESSAGE_BOX",
-            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[2]/div[1]/div[2]/div[1]/p"
+            "Xpath": "//*[@id=\\\"main\\\"]/footer/div[1]/div/span/div/div[2]/div[1]/div[2]/div[1]/p"
         },
         {
             "Nome": "SEND_ARROW",
