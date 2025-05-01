@@ -16,7 +16,7 @@ from decouple import config
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
-from SCRIPTS.functions.cls_OutWhatsapp import prc_executa_whats
+from SCRIPTS.functions.cls_OutWhatsapp import fnc_SalvarFila
 from SCRIPTS.functions.cls_CriaVcard import fnc_gerar_vcard
 from SCRIPTS.functions.cls_DataBases import prc_executa_local
 
@@ -430,7 +430,7 @@ def main():
                         if processed_email["email"] != "Não identificado" or processed_email["telefone"] != "Não identificado":
                             vcard = fnc_gerar_vcard(processed_email["nome"], processed_email["email"], processed_email["telefone"], processed_email["mensagem"]).get("Resultado")
                         if processed_email["telefone"] != "Não identificado":
-                            resultado = prc_executa_whats("PSM - ADMINISTRAÇÃO", processed_email["mensagem"] + "-" + processed_email["telefone"] + "-" +  processed_email["email"], vcard)
+                            resultado = fnc_SalvarFila("PSM - ADMINISTRAÇÃO", processed_email["mensagem"] + "-" + processed_email["telefone"] + "-" +  processed_email["email"], vcard)
                             exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
                             exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
                             exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

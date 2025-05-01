@@ -2,11 +2,11 @@
     "objetos": [
         {
             "Nome": "SEARCH_BOX",
-            "Xpath": "//*[@id=\"side\"]/div[1]/div/div[2]/div/div/div[1]/p"
+            "Xpath": "//*[@id=\"side\"]/div[1]/div/div[2]/div/div/div/p"
         },
         {
             "Nome": "MESSAGE_BOX",
-            "Xpath": "//*[@id=\\\"main\\\"]/footer/div[1]/div/span/div/div[2]/div[1]/div[2]/div[1]/p"
+            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[2]/div[1]/div[2]/div[1]/p"
         },
         {
             "Nome": "SEND_ARROW",

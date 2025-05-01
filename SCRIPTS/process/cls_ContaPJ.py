@@ -273,12 +273,12 @@ def main():
 
 		# Montagem da mensagem
 		msg = (
-			f"💰 Saldo total atual: R$ {saldo_total:,.2f}\n"
-			f"📄 NF Dan (MTD): R$ {nf_dan:,.2f}\n"
-			f"📄 NF Fula (MTD): R$ {nf_fula_emt:,.2f}"
+			f"Saldo total atual: R$ {saldo_total:,.2f}\n"
+			f"NF Dan (MTD): R$ {nf_dan:,.2f}\n"
+			f"NF Fula (MTD): R$ {nf_fula_emt:,.2f}"
 		)
 
-		fnc_SalvarFila(numero = "+5511964821360", mensagem=msg, anexo = None)
+		fnc_SalvarFila(numero = "PSM - ADMINISTRAÇÃO", mensagem=msg, anexo = None)
 
 		exec_info += f"\t\t\t\tMensagem enviada: {msg}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"

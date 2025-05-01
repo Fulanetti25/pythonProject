@@ -12,15 +12,15 @@
       "Descricao": "Processo para agilizar a informação de entrada de clientes."
     },
     {
-      "Horario": "07:00",
-      "Frequencia": "Diario",
-      "Intervalo": "N/A",
+      "Horario": "07:03",
+      "Frequencia": "Intervalo",
+      "Intervalo": "00:20",
       "Dia": "All",
-      "Classe": "cls_Exporta",
-      "Nome": "Exportação Base Projetos",
-      "Processo": "exporta_main",
+      "Classe": "cls_cls_OutWhatsapp",
+      "Nome": "Disparo da Fila no WA",
+      "Processo": "prc_EnviaFila",
       "Predecessor": "N/A",
-      "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
+      "Descricao": "Disparao Leads e mensagens enfileirados no Whatsapp nos ultimos intervalos."
     },
     {
       "Horario": "08:05",
@@ -32,6 +32,17 @@
       "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
+    },
+    {
+      "Horario": "07:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_Exporta",
+      "Nome": "Exportação Base Projetos",
+      "Processo": "exporta_main",
+      "Predecessor": "N/A",
+      "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
     {
       "Horario": "07:30",
@@ -65,6 +76,28 @@
       "Processo": "fontes_online",
       "Predecessor": "cls_AtualizaFonteLocal",
       "Descricao": "Atualizar as fontes no banco de dados online."
+    },
+	    {
+      "Horario": "08:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Carregar Contatos para a Agenda",
+      "Processo": "N/A",
+      "Predecessor": "N/A",
+      "Descricao": "Processo de carga dos contatos para Google Agenda."
+    },
+    {
+      "Horario": "10:00",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "cls_LimpaLogs",
+      "Nome": "Limpeza de Logs",
+      "Processo": "limpeza_logs",
+      "Predecessor": "N/A",
+      "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
     },
     {
       "Horario": "07:10",
@@ -123,28 +156,6 @@
     },
     {
       "Horario": "08:00",
-      "Frequencia": "Diario",
-      "Intervalo": "N/A",
-      "Dia": "All",
-      "Classe": "N/A",
-      "Nome": "Carregar Contatos para a Agenda",
-      "Processo": "N/A",
-      "Predecessor": "N/A",
-      "Descricao": "Processo de carga dos contatos para Google Agenda."
-    },
-    {
-      "Horario": "08:00",
-      "Frequencia": "Semanal",
-      "Intervalo": "N/A",
-      "Dia": "All",
-      "Classe": "N/A",
-      "Nome": "NFS-e Emitidas",
-      "Processo": "N/A",
-      "Predecessor": "N/A",
-      "Descricao": "Acompanhamento das notas emitidas dentro do limite de um MEI"
-    },
-    {
-      "Horario": "08:00",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
       "Dia": "Thursday",
@@ -153,17 +164,6 @@
       "Processo": "limpeza_drive",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
-    },
-    {
-      "Horario": "10:00",
-      "Frequencia": "Diario",
-      "Intervalo": "N/A",
-      "Dia": "All",
-      "Classe": "cls_LimpaLogs",
-      "Nome": "Limpeza de Logs",
-      "Processo": "limpeza_logs",
-      "Predecessor": "N/A",
-      "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
     },
     {
       "Horario": "12:30",

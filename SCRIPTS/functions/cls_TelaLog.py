@@ -170,7 +170,7 @@ def tela_inferior_dir(term):
     offset_nome_kpi = 20  # espaço reservado para os nomes
     linha_base += 1
     for i, col in enumerate(colunas_kpi):
-        exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, col, estilo=term.bold_white)
+        exibir_texto(term, col_base + offset_nome_kpi + i * largura_coluna, linha_base, col, estilo=term.bold_yellow)
 
     # Definição dos KPIs e seus valores
     kpis = [

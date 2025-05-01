@@ -9,6 +9,7 @@ from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_DiasUteis import df_DiasUteis
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
+from SCRIPTS.functions.cls_OutWhatsapp import main as prc_EnviaFila
 from SCRIPTS.process.cls_Exporta import main as exporta_main
 from SCRIPTS.process.cls_GooglePalavras import main as google_main
 from SCRIPTS.process.cls_VerificaMail import main as leads_main

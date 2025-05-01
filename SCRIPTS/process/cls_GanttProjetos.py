@@ -8,7 +8,7 @@ import plotly.express as px
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
-from SCRIPTS.functions.cls_OutWhatsapp import prc_executa_whats
+from SCRIPTS.functions.cls_OutWhatsapp import fnc_SalvarFila
 
 
 def processar_base():
@@ -162,7 +162,7 @@ def enviar_grafico_gantt():
 				"Qualquer alteração dos fatos ou regras, dar-se-á no dia seguinte.")
 	try:
 		log_info = "F2"
-		resultado = prc_executa_whats(numero, mensagem, file_name)
+		resultado = fnc_SalvarFila(numero, mensagem, file_name)
 
 		log_info = "F0"
 
