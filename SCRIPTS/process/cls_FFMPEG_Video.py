@@ -576,7 +576,7 @@ def prc_teste_dmb():
 					and os.path.exists(os.path.join(caminho_arquivo, nome_final))
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
-					doc_detalhe = {'Resultado': {'Resultado': {'nome_artista': 'Whitesnake', 'inicio_legenda': '0.0', 'credito_drums': '@biekyohaitus1780', 'credito_bass': '@biekyohaitus1780', 'credito_inferior': '@sand.tagious'}, 'Status_log': 'F2', 'Detail_log': None}, 'Status_log': 'F0', 'Detail_log': None}
+					doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
 					print('Iniciando: ', doc_detalhe)
 					resultado = fnc_montar_teste(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, doc_detalhe['Resultado']['Resultado'])
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"

@@ -158,8 +158,8 @@ def enviar_grafico_gantt():
 	file_dir = caminhos['Diretorio']
 	file_name = os.path.join(file_dir, caminhos['Arquivo'])
 	numero = "PSM - DESENVOLVIMENTO"
-	mensagem = ("*Bom dia Time DEV!* Esta é uma mensagem automática visando acompanharmos nossas entregas. "
-				"Qualquer alteração dos fatos ou regras, dar-se-á no dia seguinte.")
+	mensagem = ("*Bom dia Time DEV!*\nEsta é uma mensagem automática visando acompanharmos nossas entregas.\n"
+				"*Qualquer alteração dos fatos ou regras, dar-se-á no dia seguinte.*")
 	try:
 		log_info = "F2"
 		resultado = fnc_SalvarFila(numero, mensagem, file_name)
@@ -174,7 +174,6 @@ def enviar_grafico_gantt():
 
 	finally:
 		pass
-		os.remove(file_name)
 
 	return {"Resultado": str(resultado), 'Status_log': log_info, 'Detail_log': varl_detail}
 

@@ -36,10 +36,9 @@ def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
 				raise Exception("Elemento localizado, mas não visível ou habilitado")
 
 		except Exception:
-			print(f"\n[ATENÇÃO] XPath inválido ou não interativo para '{nome_objeto}': {xpath}")
-			novo_xpath = input(f"Digite o NOVO XPath para '{nome_objeto}': ").strip()
-			prc_atualiza_xpath_json(nome_objeto, novo_xpath)
-			xpath = novo_xpath
+			varl_detail = f"XPath inválido ou elemento não interativo para '{nome_objeto}'"
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+			raise Exception(varl_detail)
 
 
 def prc_atualiza_xpath_json(nome_objeto, novo_xpath):
