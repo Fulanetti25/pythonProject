@@ -7,6 +7,7 @@ from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
+#CALCULAR CUSTO DE VIDA PREVISTO E REALIZADO
 
 def fnc_processar_base():
 	log_info = "F1"

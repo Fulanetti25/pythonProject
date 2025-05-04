@@ -316,7 +316,7 @@ def prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo, idioma_origem=
     return {"Resultado": caminho_saida, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main(caminho=r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA', arquivo =  r'LEGENDA - Dua Lipa - Dance The Night.lrc'):
+def main(caminho=r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA', arquivo =  r'LEGENDA - Pitty - Teto de Vidro.lrc',idioma='pt-en'):
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
     exec_info = "\nLI\n"
@@ -341,7 +341,8 @@ def main(caminho=r'C:\Users\paulo\Downloads\TEMP\DRUMEIBES\FILA', arquivo =  r'L
         confirmacao_final = input(f"Confirma traduzir '{artista}' no estilo '{estilo}'? [s/n]: ").strip().lower()
         if confirmacao_final == "s":
             print(f"Traduzindo '{artista}' no estilo '{estilo}'...")
-            resultado = prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo, idioma_origem="en", idioma_destino="pt", modelo="gpt-4o-mini", temperature=0.7)
+            linguas = idioma.split('-')
+            resultado = prc_traduzir_lrc_musica(caminho_arquivo_lrc, artista, estilo, linguas[0], linguas[1], modelo="gpt-4o-mini", temperature=0.7)
             exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
             exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
             exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

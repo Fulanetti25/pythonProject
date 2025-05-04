@@ -14,33 +14,6 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 json_gs = config('DRUMEIBES_GS_API')
 
 
-def fnc_recupera_default():
-    log_info = "F1"
-    nome_planilha = 'VIDEOS'
-    nome_aba = 'DEFAULT'
-    varl_detail = None
-    try:
-        log_info = "F2"
-        caminho_credencial = json_gs
-        celulas = "A2:C5"
-
-        resultado = gsheets_ler_dados_otimizado(caminho_credencial, celulas)
-        dados_nomeados = fnc_mapeia_default_dados(resultado['Resultado'])
-
-        log_info = "F0"
-
-    except Exception as e:
-        varl_detail = f"Erro na etapa {log_info}, {e}"
-        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-        log_info = "F99"
-        raise
-
-    finally:
-        pass
-
-    return {"Resultado": dados_nomeados, 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
 def fnc_recupera_detalhes(video):
     log_info = "F1"
     varl_detail = None
@@ -63,47 +36,6 @@ def fnc_recupera_detalhes(video):
         pass
 
     return {"Resultado": resultado, 'Status_log': log_info, 'Detail_log': varl_detail}
-
-
-def gsheets_ler_dados_otimizado(caminho_credencial_json, intervalo):
-    log_info = "F1"
-    nome_planilha = 'VIDEOS'
-    nome_aba = 'DEFAULT'
-    varl_detail = None
-    inicio = time.time()
-    try:
-        log_info = "F2"
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(caminho_credencial_json, scope)
-        client = gspread.authorize(credentials)
-
-        sheet = client.open(nome_planilha).worksheet(nome_aba)
-
-        valores = sheet.get(intervalo)  # exemplo: 'A2:C5'
-        dados = {}
-
-        col_inicial = intervalo.split(":")[0][0]
-        colunas = ascii_uppercase[ascii_uppercase.index(col_inicial):]
-        lin_inicial = int(intervalo.split(":")[0][1:])
-
-        for i, linha in enumerate(valores):
-            for j, valor in enumerate(linha):
-                celula = f"{colunas[j]}{lin_inicial + i}"
-                dados[celula] = valor
-
-        log_info = "F0"
-
-    except Exception as e:
-        varl_detail = f"Erro na etapa {log_info}, {e}"
-        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-        log_info = "F99"
-        raise
-
-    finally:
-        fim = time.time()
-        print(f"[Tempo de execução] Leitura Google Sheets default: {fim - inicio:.2f} segundos")
-
-    return {"Resultado": dados, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_busca_video_detalhes(caminho_credencial_json, titulo_video):
@@ -133,10 +65,11 @@ def fnc_busca_video_detalhes(caminho_credencial_json, titulo_video):
             valores_linha = sheet.row_values(linha)
             dados = {
                 "nome_artista": valores_linha[2] if len(valores_linha) > 2 else '',
-                "inicio_legenda": valores_linha[3] if len(valores_linha) > 3 else '',
-                "credito_drums": valores_linha[4] if len(valores_linha) > 4 else '',
-                "credito_bass": valores_linha[5] if len(valores_linha) > 5 else '',
-                "credito_inferior": valores_linha[6] if len(valores_linha) > 6 else '',
+                "idioma": valores_linha[3] if len(valores_linha) > 3 else '',
+                "inicio_legenda": valores_linha[4] if len(valores_linha) > 4 else '',
+                "credito_drums": valores_linha[5] if len(valores_linha) > 5 else '',
+                "credito_bass": valores_linha[6] if len(valores_linha) > 6 else '',
+                "credito_inferior": valores_linha[7] if len(valores_linha) > 7 else '',
             }
 
         else:
@@ -156,40 +89,7 @@ def fnc_busca_video_detalhes(caminho_credencial_json, titulo_video):
     return {"Resultado": dados, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_mapeia_default_dados(dados_celulas: dict):
-    log_info = "F1"
-    varl_detail = None
-
-    try:
-        log_info = "F2"
-
-        mapa_celulas = {
-            'A2': 'saudacao_portugues',
-            'A3': 'saudacao_ingles',
-            'A4': 'saudacao_chines',
-            'A5': 'saudacao_coreano',
-            'B2': 'agradecimento_portugues',
-            'B3': 'agradecimento_ingles',
-            'B4': 'agradecimento_chines',
-            'B5': 'agradecimento_coreano',
-            'C2': 'slogan',
-            'C3': 'creditos',
-        }
-
-        dados_nomeados = {mapa_celulas[k]: v for k, v in dados_celulas.items() if k in mapa_celulas}
-
-        log_info = "F0"
-
-    except Exception as e:
-        varl_detail = f"Erro na etapa {log_info}, {e}"
-        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-        log_info = "F99"
-        raise
-
-    return dados_nomeados
-
-
-def main(video = 'DRUMEIBES - The Scorpions - Always Somewhere'):
+def main(video = 'Drumeibes - Pitty - Teto de Vidro'):
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
     exec_info = "\nLI\n"

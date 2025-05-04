@@ -17,6 +17,7 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_GoogleSheets import main as fnc_RetornaDocGoogle
 from SCRIPTS.functions.cls_APIGPT import main as prc_TraduzLetra
 
+
 mpy_config.change_settings({"IMAGEMAGICK_BINARY": r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"})  # Ajuste o caminho conforme sua instalação
 
 
@@ -375,6 +376,7 @@ def fnc_montar_teste(caminho, arquivo, legenda, inferior, leg_detalhe):
 
 		log_info = "F3"
 		compose_01 = clips_array([[video_sup], [video_inf]])
+		compose_01 = compose_01.set_audio(video_sup.audio)
 
 		log_info = "F4"
 		for deslocamento in range(-2, 3):
@@ -408,6 +410,7 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 	saudacoes = leg_default['saudacoes']
 	agradece = leg_default['agradece']
 	citacoes = [leg_detalhe['credito_drums'], leg_detalhe['credito_bass'], leg_detalhe['credito_inferior']]
+	idioma = leg_detalhe['idioma']
 	emoji_virado = leg_default['emoji_virado']
 	emoji_timido = leg_default['emoji_timido']
 	tags = list(leg_default['tags'])  # Faz uma cópia da lista original
@@ -504,7 +507,7 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 
 		log_info = "F7"
 		if not os.path.exists(os.path.join(caminho,traducao)):
-			prc_TraduzLetra(caminho, legenda)
+			prc_TraduzLetra(caminho, legenda, idioma)
 		legendas_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda),	float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
 		traducao_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, traducao), float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
 		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])
@@ -523,7 +526,6 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 		compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
 		compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24, threads=4)
 		compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24, threads=4)
-		winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 
 		log_info = "F10"
 		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'YTB_' + arquivo), 60)
@@ -577,8 +579,11 @@ def prc_teste_dmb():
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
 					doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 					print('Iniciando: ', doc_detalhe)
 					resultado = fnc_montar_teste(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, doc_detalhe['Resultado']['Resultado'])
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
@@ -637,8 +642,11 @@ def prc_processa_dmb():
 				):
 					exec_info += f"\t\t\t\t{nome_arquivo} SEM ARQUIVOS PENDENTES.\n"
 					doc_detalhe = fnc_RetornaDocGoogle(os.path.splitext(nome_arquivo)[0])
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 					print('Iniciando: ', doc_detalhe)
 					resultado = fnc_montar_padrao(caminho_arquivo, nome_arquivo, nome_lrc, nome_inferior, nome_intro, nome_final, doc_default, doc_detalhe['Resultado']['Resultado'])
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
+					winsound.Beep(1000, 500)  # Frequência de 1000 Hz por 500 ms
 					exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 					exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 					exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
@@ -703,7 +711,7 @@ def prc_processa_fut():
 
 
 def main():
-	prc_teste_dmb()
+	prc_processa_dmb()
 
 
 if __name__ == "__main__":
