@@ -6,7 +6,7 @@
       "Intervalo": "00:20",
       "Dia": "All",
       "Classe": "cls_VerificaMail",
-      "Nome": "Enviar Leads para o whatsapp da ADM",
+      "Nome": "Coletar Leads do Email",
       "Processo": "leads_main",
       "Predecessor": "N/A",
       "Descricao": "Processo para agilizar a informação de entrada de clientes."
@@ -14,9 +14,9 @@
     {
       "Horario": "07:03",
       "Frequencia": "Intervalo",
-      "Intervalo": "00:20",
+      "Intervalo": "01:00",
       "Dia": "All",
-      "Classe": "cls_cls_OutWhatsapp",
+      "Classe": "cls_OutWhatsapp",
       "Nome": "Disparo da Fila no WA",
       "Processo": "prc_EnviaFila",
       "Predecessor": "N/A",
@@ -32,6 +32,17 @@
       "Processo": "N/A",
       "Predecessor": "N/A",
       "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
+    },
+    {
+      "Horario": "17:30",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
+      "Classe": "N/A",
+      "Nome": "Report de Execução do robô",
+      "Processo": "N/A",
+      "Predecessor": "N/A",
+      "Descricao": "Fornecimento de resumo diário das execuções via Whatsapp."
     },
     {
       "Horario": "07:00",

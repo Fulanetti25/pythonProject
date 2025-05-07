@@ -263,16 +263,21 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
+		resultado1 = prc_limpar_arquivos()
+		print(resultado1)
+		resultado2 = fnc_preparar_base()
+		print(resultado2)
 		resultado = fnc_saldos_por_periodo()
 		res = resultado['Resultado']
 
 		# Captura dos valores desejados
 		saldo_total = res['saldo'].get('SALDO CONTA TOTAL', {}).get('ATUAL', 0)
-		nf_dan = res['notas'].get('NF_DAN', {}).get('MTD', 0)
-		nf_fula_emt = res['notas'].get('NF_FULA EMT', {}).get('MTD', 0)
+		nf_dan = res['notas'].get('NF_DAN', {}).get('YTD', 0)
+		nf_fula_emt = res['notas'].get('NF_FULA EMT', {}).get('YTD', 0)
 
 		# Montagem da mensagem
 		msg = (
+			f"*Report Financeiro:*\n"
 			f"Saldo total atual: R$ {saldo_total:,.2f}\n"
 			f"NF Dan (MTD): R$ {nf_dan:,.2f}\n"
 			f"NF Fula (MTD): R$ {nf_fula_emt:,.2f}"
@@ -280,7 +285,7 @@ def main():
 
 		fnc_SalvarFila(numero = "PSM - ADMINISTRAÇÃO", mensagem=msg, anexo = None)
 
-		exec_info += f"\t\t\t\tMensagem enviada: {msg}\n"
+		exec_info += f"\t\t\t\tMensagem adicionada à fila: {msg}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 

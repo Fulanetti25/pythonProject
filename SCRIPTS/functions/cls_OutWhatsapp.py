@@ -71,8 +71,8 @@ def fnc_ProcessarFila():
 
 	finally:
 		pass
-		# if log_info == "F0":
-		# 	json_limpa(filas_path)
+		if log_info == "F0":
+			json_limpa(filas_path)
 
 	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -115,60 +115,69 @@ def fnc_envia_fila(driver, fila):
 
 	try:
 		for item in fila:
-			numero = item['numero']
-			mensagem = item['mensagem']
-			anexo = item['anexo']
+			try:
+				numero = item['numero']
+				mensagem = item['mensagem']
+				anexo = item['anexo']
 
-			log_info = "F2"
-			nome_objeto = 'SEARCH_BOX'
-			objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
-			objeto.click()
-			objeto.send_keys(numero)
-			objeto.send_keys(Keys.ENTER)
-
-			log_info = "F3"
-			nome_objeto = 'MESSAGE_BOX'
-			objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
-			for linha in mensagem.split('\n'):
-				objeto.send_keys(linha)
-				objeto.send_keys(Keys.SHIFT, Keys.ENTER)
-
-			if anexo:
-				log_info = "F4"
-				nome_objeto = 'PLUS_BUTTON'
+				log_info = "F2"
+				nome_objeto = 'SEARCH_BOX'
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				objeto.click()
+				objeto.send_keys(numero)
+				objeto.send_keys(Keys.ENTER)
 
-				nome, extensao = os.path.splitext(anexo)
-				if extensao == '.vcf':
-					log_info = "F5.1"
-					nome_objeto = 'DOC_OPTION'
-				elif extensao == '.png':
-					log_info = "F5.2"
-					nome_objeto = 'IMG_OPTION'
+				log_info = "F3"
+				nome_objeto = 'MESSAGE_BOX'
+				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
+				for linha in mensagem.split('\n'):
+					objeto.send_keys(linha)
+					objeto.send_keys(Keys.SHIFT, Keys.ENTER)
+
+				if anexo:
+					log_info = "F4"
+					nome_objeto = 'PLUS_BUTTON'
+					objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
+					objeto.click()
+
+					nome, extensao = os.path.splitext(anexo)
+					if extensao == '.vcf':
+						log_info = "F5.1"
+						nome_objeto = 'DOC_OPTION'
+					elif extensao == '.png':
+						log_info = "F5.2"
+						nome_objeto = 'IMG_OPTION'
+					objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
+					objeto.click()
+
+					time.sleep(5)
+					os.system(f'echo {anexo} | clip')
+					pyautogui.hotkey('ctrl', 'v')
+					pyautogui.press('enter')
+
+				if anexo:
+					log_info = "F6"
+					nome_objeto = 'BIG_ARROW'
+				else:
+					log_info = "F7"
+					nome_objeto = 'SEND_ARROW'
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				objeto.click()
+				time.sleep(10)
 
-				time.sleep(5)
-				os.system(f'echo {anexo} | clip')
-				pyautogui.hotkey('ctrl', 'v')
-				pyautogui.press('enter')
+				result.append({'numero': numero, 'status': 'OK'})
 
-			if anexo:
-				log_info = "F6"
-				nome_objeto = 'BIG_ARROW'
-			else:
-				log_info = "F7"
-				nome_objeto = 'SEND_ARROW'
-			objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
-			objeto.click()
-			time.sleep(10)
+			except Exception as e_item:
+				varl_detail = f"{log_info}, {e_item}"
+				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+				fnc_SalvarFalha('WHATSAPP', varl_detail, numero, mensagem, anexo)
+				result.append({'numero': numero, 'status': 'FALHA'})
+				continue  # segue com o próximo item da fila
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
-		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		fnc_SalvarFalha('WHATSAPP', varl_detail, numero, mensagem, anexo)
-		log_info = "F99"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F0"
 		raise
 
 	finally:
@@ -231,7 +240,7 @@ def fnc_close_whats(driver):
 	return {"Resultado": "Conexão fechada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_SalvarFalha(server, conn_log, sql_query, params):
+def fnc_SalvarFalha(server, varl_detail, numero, mensagem, anexo):
 	log_info = "F1"
 	varl_detail = None
 	falhas_sql = json_caminho('Json_Falhas_SQL')
@@ -242,9 +251,10 @@ def fnc_SalvarFalha(server, conn_log, sql_query, params):
 		pilha = falhas_dados if falhas_dados else []
 		falha = {
 			"server": server,
-			"log": conn_log,
-			"query": sql_query,
-			"params": params,
+			"log": varl_detail,
+			"numero": numero,
+			"mensagem": mensagem,
+			"anexo": anexo,
 		}
 
 		if falha not in pilha:

@@ -117,6 +117,8 @@ def tela_superior_esq(term):
             break
         if 'Falha' in registro:
             exibir_texto(term, COLUNA_ESQ, linha_y, registro[:99].rstrip('\n'),estilo=term.red)
+        elif 'WARNING' in registro:
+            exibir_texto(term, COLUNA_ESQ, linha_y, registro[:99].rstrip('\n'),estilo=term.yellow)
         else:
             exibir_texto(term, COLUNA_ESQ, linha_y, registro[:99].rstrip('\n'))
         linha_y += 1
