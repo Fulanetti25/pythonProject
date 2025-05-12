@@ -9,16 +9,60 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 #CALCULAR CUSTO DE VIDA PREVISTO E REALIZADO
 
+
+def fnc_converter_valor(serie_valores):
+	return (
+		serie_valores.astype(str)
+		.str.replace('.', '', regex=False)
+		.str.replace(',', '.', regex=False)
+		.replace('', '0')
+		.astype(float)
+	)
+
+
 def fnc_processar_base():
 	log_info = "F1"
 	varl_detail = None
 	caminhos = json_caminho('Arquivo_PF')
 	file_dir = caminhos['Diretorio']
-	file_name = os.path.join(file_dir, caminhos['Arquivo'])
 
 	try:
 		log_info = "F2"
-		df = pd.read_excel(file_name, sheet_name='EXTRATO', engine='openpyxl')
+		for _, _, arquivos in os.walk(file_dir):
+			for arquivo in arquivos:
+				file_name = os.path.join(file_dir, arquivo)
+				df_raw = pd.read_excel(file_name, sheet_name='Sheet0', engine='xlrd')
+				idx_header = df_raw[df_raw.eq('Data').any(axis=1)].index[0]
+				idx_fim = df_raw[df_raw.iloc[:, 0].astype(str).str.contains('Os dados acima', na=False)].index[0]
+				df = df_raw.iloc[idx_header + 1:idx_fim].copy()
+				df.columns = df_raw.iloc[idx_header]
+				df = df.reset_index(drop=True)
+				df_controle = df[df['Histórico'].isin(['SALDO ANTERIOR', 'Total'])].copy()
+				df = df[~df['Histórico'].isin(['SALDO ANTERIOR', 'Total'])].reset_index(drop=True)
+				df['Data'] = df['Data'].astype(str)
+				for i in df[df['Data'].isna() | df['Data'].eq('nan')].index:
+					df.at[i - 1, 'Histórico'] = f"{df.at[i - 1, 'Histórico']} {df.at[i, 'Histórico']}"
+				df = df[~df['Data'].isin(['nan', 'NaT'])].reset_index(drop=True)
+
+				df['Crédito (R$)'] = fnc_converter_valor(df['Crédito (R$)'])
+				df['Débito (R$)'] = fnc_converter_valor(df['Débito (R$)'])
+				df_controle['Crédito (R$)'] = fnc_converter_valor(df_controle['Crédito (R$)'])
+				df_controle['Débito (R$)'] = fnc_converter_valor(df_controle['Débito (R$)'])
+
+				soma_credito = df['Crédito (R$)'].sum(skipna=True)
+				soma_debito = df['Débito (R$)'].sum(skipna=True)
+				valor_credito_total = df_controle.loc[df_controle['Histórico'] == 'Total', 'Crédito (R$)'].sum()
+				valor_debito_total = df_controle.loc[df_controle['Histórico'] == 'Total', 'Débito (R$)'].sum()
+				valor_saldo_anterior = fnc_converter_valor(df_controle.loc[df_controle['Histórico'] == 'SALDO ANTERIOR', 'Saldo (R$)']).sum()
+
+				valor_saldo_final_calc = soma_credito + soma_debito + valor_saldo_anterior
+				valor_saldo_final_real = fnc_converter_valor(df['Saldo (R$)']).dropna().iloc[-1]
+
+				if {valor_saldo_final_calc:.2f} == {valor_saldo_final_real:.2f}:
+					print('Bateu')
+				breakpoint()
+
+
 
 		log_info = "F3"
 		df['MES_REF'] = pd.to_datetime(df['Data']).dt.to_period('M').astype(str).str.replace('-', '')

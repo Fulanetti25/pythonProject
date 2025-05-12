@@ -100,7 +100,7 @@
       "Descricao": "Processo de carga dos contatos para Google Agenda."
     },
     {
-      "Horario": "10:00",
+      "Horario": "17:25",
       "Frequencia": "Diario",
       "Intervalo": "N/A",
       "Dia": "All",
@@ -133,10 +133,10 @@
       "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
     {
-      "Horario": "07:40",
+      "Horario": "12:40",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Monday",
+      "Dia": "Sunday",
       "Classe": "cls_ContaPJ",
       "Nome": "Relatório Contas PJ",
       "Processo": "report_financeiro",
@@ -177,7 +177,7 @@
       "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
     },
     {
-      "Horario": "12:30",
+      "Horario": "11:30",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
       "Dia": "Wednesday",
@@ -188,10 +188,10 @@
       "Descricao": "Processar automaticamente teste dos arquivos da DRUMEIBES"
     },
     {
-      "Horario": "08:30",
+      "Horario": "11:30",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Sunday",
+      "Dia": "Saturday",
       "Classe": "cls_FFMPEG_Video",
       "Nome": "Processamento Drumeibes",
       "Processo": "prc_processa_dmb",
@@ -208,6 +208,17 @@
       "Processo": "prc_processa_fut",
       "Predecessor": "N/A",
       "Descricao": "Processar automaticamente domingo do FUTE"
+    },
+    {
+      "Horario": "11:30",
+      "Frequencia": "Semanal",
+      "Intervalo": "N/A",
+      "Dia": "Monday",
+      "Classe": "cls_FFMPEG_Video",
+      "Nome": "Processamento PESSOAL",
+      "Processo": "N/A",
+      "Predecessor": "N/A",
+      "Descricao": "Processar automaticamente video semanal PESSOAL"
     }
   ]
 }

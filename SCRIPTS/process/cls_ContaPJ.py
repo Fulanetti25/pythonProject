@@ -4,7 +4,7 @@ import traceback
 import inspect
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho
@@ -251,6 +251,50 @@ def fnc_saldos_por_periodo():
 	return {"Resultado": fnc_convert_to_float(df_resultados), 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def fnc_movimentacoes():
+	log_info = "F1"
+	varl_detail = None
+	contas_map = {'NU_2152502229': 'NU_FULA_PJ', 'NU_500633351': 'NU_DAN_PJ', 'PAGBANK_DAN': 'PB_DAN_PJ', 'PAGBANK_FULA': 'PB_FULA_PJ'}
+	caminho_base = json_caminho('Banco_Extrato')
+	file_contas = os.path.join(caminho_base['Diretorio'], caminho_base['Arquivo'])
+
+	try:
+		log_info = "F2"
+		df = pd.read_csv(file_contas, sep=',', dtype=str)
+		df['Data'] = pd.to_datetime(df['Data'], format="%d/%m/%Y", errors='coerce')
+		df['Valor'] = pd.to_numeric(df['Valor'].str.replace(',', '.'), errors='coerce')
+		hoje = datetime.today().date()
+		df = df.dropna(subset=['Data', 'Valor'])
+
+		log_info = "F3"
+		# Define intervalo da semana anterior (segunda a domingo)
+		hoje = datetime.today().date()
+		inicio_semana = hoje - timedelta(days=hoje.weekday() + 7)  # Segunda passada
+		fim_semana = inicio_semana + timedelta(days=6)  # Domingo passado
+		df_resultados = df[(df['Data'] >= pd.to_datetime(inicio_semana)) & (df['Data'] <= pd.to_datetime(fim_semana))].copy()
+
+		log_info = "F4"
+		# (Opcional) Adiciona nome de conta legível
+		df_resultados['Conta'] = df_resultados['Conta'].map(contas_map).fillna(df_resultados['Conta'])
+		df_resultados['Descrição'] = df_resultados['Descrição'].str.extract(r'Pix - (.*?) - (.*?)(?: -|$)')[0]
+
+		# Remove coluna desnecessária
+		df_resultados = df_resultados.drop(['Identificador'], axis=1)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": fnc_convert_to_float(df_resultados), 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
@@ -264,11 +308,17 @@ def main():
 	exec_info += "\t\tMI\n"
 	try:
 		resultado1 = prc_limpar_arquivos()
-		print(resultado1)
 		resultado2 = fnc_preparar_base()
-		print(resultado2)
-		resultado = fnc_saldos_por_periodo()
-		res = resultado['Resultado']
+		resultado3 = fnc_saldos_por_periodo()
+		res = resultado3['Resultado']
+
+		resultado4 = fnc_movimentacoes()
+		df_mov = resultado4['Resultado']  # deve ser um DataFrame
+		df_mov['Data'] = pd.to_datetime(df_mov['Data'], errors='coerce')
+		mov_texto = '\n'.join(
+			f"{linha['Data'].strftime('%d/%m')}{f'{linha['Valor']:,.2f}'.rjust(10)} - {linha['Descrição']}"
+			for _, linha in df_mov.iterrows()
+		)
 
 		# Captura dos valores desejados
 		saldo_total = res['saldo'].get('SALDO CONTA TOTAL', {}).get('ATUAL', 0)
@@ -279,13 +329,17 @@ def main():
 		msg = (
 			f"*Report Financeiro:*\n"
 			f"Saldo total atual: R$ {saldo_total:,.2f}\n"
-			f"NF Dan (MTD): R$ {nf_dan:,.2f}\n"
-			f"NF Fula (MTD): R$ {nf_fula_emt:,.2f}"
+			f"NF Dan (YTD): R$ {nf_dan:,.2f}\n"
+			f"NF Fula (YTD): R$ {nf_fula_emt:,.2f}\n\n"
+			f"Movimentações:"
 		)
 
-		fnc_SalvarFila(numero = "PSM - ADMINISTRAÇÃO", mensagem=msg, anexo = None)
+		# Junta na mensagem
+		msg += f"\n{mov_texto}\n"
+		msg += f"*Detalhamento Completo no Google Drive*"
 
-		exec_info += f"\t\t\t\tMensagem adicionada à fila: {msg}\n"
+		resultado = fnc_SalvarFila(numero = "PSM - ADMINISTRAÇÃO", mensagem=msg, anexo = None)
+		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}:\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 

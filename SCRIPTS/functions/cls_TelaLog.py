@@ -72,8 +72,8 @@ def fn_ultimo_log(nome_classe):
             ultima_execucao_str = registros_sucesso[0].split(',')[0]
             ultima_execucao = datetime.strptime(ultima_execucao_str, '%Y-%m-%d %H:%M:%S')
             return ultima_execucao
-    else:
-        return None
+
+    return datetime.now() - timedelta(days=1)
 
 
 def tela_limpar():

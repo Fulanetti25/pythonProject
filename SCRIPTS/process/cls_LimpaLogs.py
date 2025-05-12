@@ -49,7 +49,7 @@ def prc_LimparLogs():
 
 	try:
 		log_info = "F2"
-		data_limite = datetime.now() - timedelta(days=7)
+		data_limite = datetime.now() - timedelta(days=1)
 		regex_data = re.compile(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 		linhas = []
 		cortar = True
