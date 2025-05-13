@@ -210,6 +210,7 @@ def fnc_connect_whats():
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail,
 					 var_erro=True)
 		log_info = "F99"
+		raise
 
 	finally:
 		pass

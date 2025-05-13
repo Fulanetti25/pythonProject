@@ -49,7 +49,7 @@ def prc_LimparLogs():
 
 	try:
 		log_info = "F2"
-		data_limite = datetime.now() - timedelta(days=1)
+		data_limite = datetime.now() - timedelta(days=3)
 		regex_data = re.compile(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 		linhas = []
 		cortar = True
@@ -82,6 +82,98 @@ def prc_LimparLogs():
 	return {"Resultado": "Higienizado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def prc_GeraResumo():
+	log_info = "F1"
+	varl_detail = None
+	caminhos = json_caminho("Log_Acompanhamento")
+	file_name = os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])
+	caminhos = json_caminho("Log_Sumarizado")
+	sumarizado_name = os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])
+
+	try:
+		log_info = "F2"
+		with open(file_name, "r", encoding="utf-8", errors="replace") as f:
+			linhas_log = f.readlines()
+		dict_processos = {}
+		for linha in linhas_log:
+			partes = linha.strip().split(',')
+			if len(partes) < 7:
+				continue
+			_, _, _, _, status, classe, funcao = partes[:7]
+			chave = (classe.strip(), funcao.strip())
+			if chave not in dict_processos:
+				dict_processos[chave] = {
+					"execucoes": 0,
+					"sucessos": 0,
+					"falhas": 0,
+					"ult_status": "",
+					"erros": {}
+				}
+			dict_processos[chave]["execucoes"] += 1
+			if status.lower() == "sucesso":
+				dict_processos[chave]["sucessos"] += 1
+			else:
+				dict_processos[chave]["falhas"] += 1
+			dict_processos[chave]["ult_status"] = status.strip()
+
+		log_info = "F3"
+		indice = 0
+		while indice < len(linhas_log):
+			linha = linhas_log[indice].strip()
+			if "Traceback:" in linha:
+				erro_detalhe = [linha]
+				indice += 1
+				while indice < len(linhas_log) and linhas_log[indice].startswith(" "):
+					erro_detalhe.append(linhas_log[indice].strip())
+					indice += 1
+				texto_erro = "\n".join(erro_detalhe).strip()
+				# Backtrack para descobrir de qual processo foi esse erro
+				for i in range(indice - 1, 0, -1):
+					partes = linhas_log[i].strip().split(',')
+					if len(partes) >= 7:
+						_, _, _, _, status, classe, funcao = partes[:7]
+						chave = (classe.strip(), funcao.strip())
+						if chave in dict_processos:
+							dict_erros = dict_processos[chave]["erros"]
+							dict_erros[texto_erro] = dict_erros.get(texto_erro, 0) + 1
+							break
+			else:
+				indice += 1
+
+		log_info = "F4"
+		linhas_saida = []
+		for (classe, funcao), info in dict_processos.items():
+			execs = info["execucoes"]
+			sucesso = info["sucessos"]
+			falha = info["falhas"]
+			perc = round((sucesso / execs) * 100, 2) if execs else 0.0
+			linhas_saida.append(f"Processo: {classe}, Função: {funcao}\n")
+			linhas_saida.append(f"Execuções: {execs}, Sucessos: {sucesso}, Falhas: {falha}, Percentual Sucesso: {perc}%\n")
+			if info["ult_status"].lower() == "sucesso":
+				linhas_saida.append("Status atual: Resolvido\n")
+			else:
+				linhas_saida.append("Status atual: Com falhas\n")
+				linhas_saida.append("Erros encontrados:\n")
+				for erro, qtd in info["erros"].items():
+					linhas_saida.append(f"  ({qtd}x) {erro}\n")
+			linhas_saida.append("-" * 50 + "\n")
+		with open(sumarizado_name, "w", encoding="utf-8") as f:
+			f.writelines(linhas_saida)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": "Arquivo gerado", 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
@@ -102,6 +194,10 @@ def main():
 		exec_info += f"\t\t\t\tResultado: {resultado2['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado2['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado2['Detail_log']}\n"
+		resultado3 = prc_GeraResumo()
+		exec_info += f"\t\t\t\tResultado: {resultado3['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado3['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado3['Detail_log']}\n"
 		exec_info += "\t\tMF\n"
 		varg_erro = False
 

@@ -23,8 +23,9 @@ def fnc_converter_valor(serie_valores):
 def fnc_processar_base():
 	log_info = "F1"
 	varl_detail = None
-	caminhos = json_caminho('Arquivo_PF')
+	caminhos = json_caminho('Extrato_PF')
 	file_dir = caminhos['Diretorio']
+	file_out = os.path.join(os.path.dirname(os.path.dirname(file_dir)),'Dados_PF.csv')
 
 	try:
 		log_info = "F2"
@@ -36,42 +37,44 @@ def fnc_processar_base():
 				idx_fim = df_raw[df_raw.iloc[:, 0].astype(str).str.contains('Os dados acima', na=False)].index[0]
 				df = df_raw.iloc[idx_header + 1:idx_fim].copy()
 				df.columns = df_raw.iloc[idx_header]
+				df.columns = df.columns.str.upper().str.strip().str.replace(' (R$)', '', regex=False)
 				df = df.reset_index(drop=True)
-				df_controle = df[df['Histórico'].isin(['SALDO ANTERIOR', 'Total'])].copy()
-				df = df[~df['Histórico'].isin(['SALDO ANTERIOR', 'Total'])].reset_index(drop=True)
-				df['Data'] = df['Data'].astype(str)
-				for i in df[df['Data'].isna() | df['Data'].eq('nan')].index:
-					df.at[i - 1, 'Histórico'] = f"{df.at[i - 1, 'Histórico']} {df.at[i, 'Histórico']}"
-				df = df[~df['Data'].isin(['nan', 'NaT'])].reset_index(drop=True)
+				df_controle = df[df['HISTÓRICO'].isin(['SALDO ANTERIOR', 'Total'])].copy()
+				df = df[~df['HISTÓRICO'].isin(['SALDO ANTERIOR', 'Total'])].reset_index(drop=True)
+				df['DATA'] = df['DATA'].astype(str)
+				for i in df[df['DATA'].isna() | df['DATA'].eq('nan')].index:
+					df.at[i - 1, 'HISTÓRICO'] = f"{df.at[i - 1, 'HISTÓRICO']} {df.at[i, 'HISTÓRICO']}"
+				df = df[~df['DATA'].isin(['nan', 'NaT'])].reset_index(drop=True)
 
-				df['Crédito (R$)'] = fnc_converter_valor(df['Crédito (R$)'])
-				df['Débito (R$)'] = fnc_converter_valor(df['Débito (R$)'])
-				df_controle['Crédito (R$)'] = fnc_converter_valor(df_controle['Crédito (R$)'])
-				df_controle['Débito (R$)'] = fnc_converter_valor(df_controle['Débito (R$)'])
+				df['CRÉDITO'] = fnc_converter_valor(df['CRÉDITO'])
+				df['DÉBITO'] = fnc_converter_valor(df['DÉBITO'])
+				df_controle['CRÉDITO'] = fnc_converter_valor(df_controle['CRÉDITO'])
+				df_controle['DÉBITO'] = fnc_converter_valor(df_controle['DÉBITO'])
 
-				soma_credito = df['Crédito (R$)'].sum(skipna=True)
-				soma_debito = df['Débito (R$)'].sum(skipna=True)
-				valor_credito_total = df_controle.loc[df_controle['Histórico'] == 'Total', 'Crédito (R$)'].sum()
-				valor_debito_total = df_controle.loc[df_controle['Histórico'] == 'Total', 'Débito (R$)'].sum()
-				valor_saldo_anterior = fnc_converter_valor(df_controle.loc[df_controle['Histórico'] == 'SALDO ANTERIOR', 'Saldo (R$)']).sum()
+				soma_credito = df['CRÉDITO'].sum(skipna=True)
+				soma_debito = df['DÉBITO'].sum(skipna=True)
+				valor_credito_total = df_controle.loc[df_controle['HISTÓRICO'] == 'Total', 'CRÉDITO'].sum()
+				valor_debito_total = df_controle.loc[df_controle['HISTÓRICO'] == 'Total', 'DÉBITO'].sum()
+				valor_saldo_anterior = fnc_converter_valor(df_controle.loc[df_controle['HISTÓRICO'] == 'SALDO ANTERIOR', 'SALDO']).sum()
 
 				valor_saldo_final_calc = soma_credito + soma_debito + valor_saldo_anterior
-				valor_saldo_final_real = fnc_converter_valor(df['Saldo (R$)']).dropna().iloc[-1]
+				valor_saldo_final_real = fnc_converter_valor(df['SALDO']).dropna().iloc[-1]
 
-				if {valor_saldo_final_calc:.2f} == {valor_saldo_final_real:.2f}:
-					print('Bateu')
-				breakpoint()
+				if round(valor_saldo_final_calc, 2) == round(valor_saldo_final_real, 2):
+					if os.path.exists(file_out):
+						df_existente = pd.read_csv(file_out, sep=',')
+						df['CHAVE_UNICA'] = df.astype(str).agg('|'.join, axis=1)
+						df_existente['CHAVE_UNICA'] = df_existente.astype(str).agg('|'.join, axis=1)
+						df_novos = df[~df['CHAVE_UNICA'].isin(df_existente['CHAVE_UNICA'])].drop(columns='CHAVE_UNICA')
+					else:
+						df_novos = df
+					if not df_novos.empty:
+						if 'SALDO' in df_novos.columns:
+							df_novos.drop(columns='SALDO', inplace=True)
+							df_novos.to_csv(file_out, sep=',', mode='a', header=not os.path.exists(file_out), index=False)
+				else:
+					print('Arquivo ' + arquivo + ' não inserido.')
 
-
-
-		log_info = "F3"
-		df['MES_REF'] = pd.to_datetime(df['Data']).dt.to_period('M').astype(str).str.replace('-', '')
-		df_receita = (df[df['TIPO'] == 'RECEITA'].groupby(['Ano', 'MES_REF']).agg(RECEITA=('F_VALOR', 'sum')).reset_index())
-		df_despesa = (df[df['TIPO'] == 'DESPESA'].groupby(['Ano', 'MES_REF']).agg(DESPESA=('F_VALOR', 'sum')).reset_index())
-		df_saldo = (df.groupby(['Ano', 'MES_REF']).agg(SALDO=('F_VALOR', 'sum')).reset_index())
-
-		df_saldo = (df_saldo.merge(df_receita, on=['Ano', 'MES_REF'], how='left').merge(df_despesa, on=['Ano', 'MES_REF'], how='left'))
-		df_saldo[['RECEITA', 'DESPESA']] = df_saldo[['RECEITA', 'DESPESA']].fillna(0)
 		log_info = "F0"
 
 	except Exception as e:
@@ -83,7 +86,40 @@ def fnc_processar_base():
 	finally:
 		pass
 
-	return {"Resultado": df_saldo, 'Status_log': log_info, 'Detail_log': varl_detail}
+	return {"Resultado": 'Arquivo atualizado', 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_calcular_custo():
+	log_info = "F1"
+	varl_detail = None
+	custo_vida = {
+		"Aluguel": 2151.0,
+		"Condominio": 500.0,
+		"Gás": 40.0,
+		"Luz": 90.0,
+		"Internet": 116.0,
+		"Celular": 58.0,
+		"Água": 76.0,
+		"Convênio": 1618.0,
+		"Academia": 250.0
+	}
+
+	try:
+		log_info = "F2"
+
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		pass
+
+	return {"Resultado": 'Arquivo atualizado', 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def main():

@@ -101,14 +101,14 @@
     },
     {
       "Horario": "17:25",
-      "Frequencia": "Diario",
+      "Frequencia": "Diário",
       "Intervalo": "N/A",
-      "Dia": "All",
+      "Dia": "Util",
       "Classe": "cls_LimpaLogs",
       "Nome": "Limpeza de Logs",
       "Processo": "limpeza_logs",
       "Predecessor": "N/A",
-      "Descricao": "Limpar histórico anterior a 7 dias nos arquivos de Log e Google"
+      "Descricao": "Limpar histórico anterior a 3 dias nos arquivos de Log e Google"
     },
     {
       "Horario": "07:10",
