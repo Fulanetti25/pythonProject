@@ -108,7 +108,7 @@
       "Nome": "Limpeza de Logs",
       "Processo": "limpeza_logs",
       "Predecessor": "N/A",
-      "Descricao": "Limpar histórico anterior a 3 dias nos arquivos de Log e Google"
+      "Descricao": "Limpar histórico anterior a 3 dias nos arquivos de Log e Google e gerar relatório"
     },
     {
       "Horario": "07:10",

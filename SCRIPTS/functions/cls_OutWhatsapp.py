@@ -13,15 +13,47 @@ from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_reg
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
+def fnc_gerar_xpath(elemento):
+	try:
+		components = []
+		current = elemento
+		while current is not None:
+			parent = current.find_element("xpath", "..")
+			siblings = parent.find_elements("xpath", f"./{current.tag_name}")
+			if len(siblings) == 1:
+				components.append(f"{current.tag_name}")
+			else:
+				index = siblings.index(current) + 1
+				components.append(f"{current.tag_name}[{index}]")
+			if current.tag_name.lower() == "html":
+				break
+			current = parent
+		components.reverse()
+		xpath = "/" + "/".join(components)
+		return xpath
+	except Exception as e:
+		print(f"[ERRO] Falha ao gerar XPath: {e}")
+		return None
+
+
 def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
+	import pyautogui
+	import cv2
+	import numpy as np
 	from selenium.webdriver.common.by import By
 	from selenium.webdriver.support.ui import WebDriverWait
 	from selenium.webdriver.support import expected_conditions as EC
 
+	log_info = "F1"
+	varl_detail = None
+
+	log_info = "F2"
 	mapa_objetos = json_caminho('Json_Mapa_Objetos')
+	mapa_imagens = json_caminho('Asset_Images')
 	caminho_json = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
 	dados_objetos = json_dados(caminho_json)
 
+	# Busca XPath no JSON pelo nome do objeto
 	xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == nome_objeto), None)
 	if not xpath:
 		print(f"[ERRO] XPath não encontrado no JSON para o objeto '{nome_objeto}'")
@@ -29,16 +61,43 @@ def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
 
 	while True:
 		try:
+			# Tenta encontrar elemento pelo XPath salvo
 			elemento = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
 			if elemento.is_displayed() and elemento.is_enabled():
 				return elemento
-			else:
-				raise Exception("Elemento localizado, mas não visível ou habilitado")
-
+			raise Exception("Elemento localizado, mas não visível ou habilitado")
 		except Exception:
-			varl_detail = f"XPath inválido ou elemento não interativo para '{nome_objeto}'"
-			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-			raise Exception(varl_detail)
+			detalhe_erro = f"XPath inválido ou elemento não interativo para '{nome_objeto}'"
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=detalhe_erro, var_erro=True)
+
+			screenshot_path = os.path.join(mapa_imagens['Diretorio'], "tela_atual.png")
+			pyautogui.screenshot(screenshot_path)
+
+			for nome_arquivo in os.listdir(mapa_imagens['Diretorio']):
+				if nome_objeto.lower() in nome_arquivo.lower() and nome_arquivo.lower().endswith(('.png', '.jpg')):
+					imagem_modelo_path = os.path.join(mapa_imagens['Diretorio'], nome_arquivo)
+					local = pyautogui.locateOnScreen(imagem_modelo_path, confidence=0.85)
+					if local:
+						centro = pyautogui.center(local)
+						pyautogui.moveTo(centro.x, centro.y)
+						pyautogui.click()
+						try:
+							js_code = f"return document.elementFromPoint({centro.x}, {centro.y}).outerHTML"
+							html = driver.execute_script(js_code)
+							elemento_html = driver.execute_script(f"return document.elementFromPoint({centro.x}, {centro.y})")
+							novo_xpath = fnc_gerar_xpath(elemento_html)
+							prc_atualiza_xpath_json(nome_objeto, novo_xpath)
+							detalhe_log = f"XPath alternativo atualizado para '{nome_objeto}': {novo_xpath}"
+							log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=detalhe_log)
+							elemento_novo = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, novo_xpath)))
+							return elemento_novo
+						except Exception as e:
+							log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"Erro no fallback visual: {e}", var_erro=True)
+							pass
+
+			# 3b) Se nenhuma imagem servir
+			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"Nenhuma imagem corresponde ao objeto '{nome_objeto}'", var_erro=True)
+			return None
 
 
 def prc_atualiza_xpath_json(nome_objeto, novo_xpath):
@@ -70,9 +129,9 @@ def fnc_ProcessarFila():
 		raise
 
 	finally:
-		pass
 		if log_info == "F0":
-			json_limpa(filas_path)
+			pass
+			# json_limpa(filas_path)
 
 	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -243,7 +302,6 @@ def fnc_close_whats(driver):
 
 def fnc_SalvarFalha(server, varl_detail, numero, mensagem, anexo):
 	log_info = "F1"
-	varl_detail = None
 	falhas_sql = json_caminho('Json_Falhas_SQL')
 	falhas_dados = json_dados(os.path.join(falhas_sql['Diretorio'], falhas_sql['Arquivo']))
 

@@ -26,6 +26,7 @@ IMAP_USER = config('IMAP_USER')
 IMAP_PASS = config('IMAP_PASS')
 SMTP_SERVER = config('SMTP_SERVER')
 SMTP_CC = config('SMTP_CC')
+SMTP_PORT = config('SMTP_PORT')
 
 
 def prc_connect_email():
@@ -252,13 +253,17 @@ def prc_process_email(msg_data):
 
 
 def prc_reply_dados(destinatario, assunto, corpo_email):
+    log_info = "F1"
+    varl_detail = None
     try:
+        log_info = "F2"
         smtp_server = SMTP_SERVER
-        smtp_port = 587
+        smtp_port = SMTP_PORT
         smtp_user = IMAP_USER
         smtp_password = IMAP_PASS
         destinatario_copia = SMTP_CC
 
+        log_info = "F3"
         msg = MIMEMultipart()
         msg['From'] = smtp_user
         msg['To'] = destinatario
@@ -266,6 +271,7 @@ def prc_reply_dados(destinatario, assunto, corpo_email):
         msg['Subject'] = assunto
         msg.attach(MIMEText(corpo_email, 'plain'))
 
+        log_info = "F4"
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(smtp_user, smtp_password)
@@ -273,10 +279,15 @@ def prc_reply_dados(destinatario, assunto, corpo_email):
         server.sendmail(smtp_user, to_list, msg.as_string())
         server.quit()
 
-        return {"Resultado": "E-mail enviado com sucesso.", 'Status_log': "F0", 'Detail_log': "Email enviado."}
+        log_info = "F0"
 
     except Exception as e:
-        return {"Resultado": "Erro ao enviar o e-mail.", 'Status_log': "F99", 'Detail_log': f"Erro: {e}"}
+        varl_detail = f"{log_info}, {e}"
+        log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+        log_info = "F99"
+        raise
+
+    return {"Resultado": "E-mail enviado com sucesso.", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def prc_reply_mail(processed_email):
@@ -289,26 +300,14 @@ def prc_reply_mail(processed_email):
                                              mensagem=processed_email["mensagem"],
                                              email=processed_email["email"])
 
-        # Exibir mensagem para o usuário e solicitar confirmação
-        print("\nPrévia do E-mail:")
-        print(f"Para: {processed_email['email']}")
-        print(f"Assunto: Planilha sob Medida - Requisição de contato")
-        print("Mensagem:")
-        print(corpo_email)
-        confirmacao = input("\nDeseja enviar este e-mail? (s/n): ").strip().lower()
-
-        if confirmacao != 's':
-            return {"Resultado": "Envio cancelado pelo usuário.", 'Status_log': "F1", 'Detail_log': "Envio cancelado."}
-
-        resultado_envio = prc_reply_dados(processed_email["email"],
-                                          "Planilha sob Medida - Requisição de contato",
-                                          corpo_email)
-        return resultado_envio
+        resultado_envio = prc_reply_dados(processed_email["email"], "Planilha sob Medida - Requisição de contato", corpo_email)
 
     except Exception as e:
         varl_detail = f"Erro na etapa de confirmação ou envio do e-mail, {e}"
         log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
         return {"Resultado": "Erro ao processar o envio do e-mail.", 'Status_log': "F99", 'Detail_log': varl_detail}
+
+    return resultado_envio
 
 
 def prc_salvar_anexos(email, assunto, diretorio_destino):
@@ -381,8 +380,10 @@ def prc_move_email(mail, message_id, target_folder):
 def select_case_pasta(valor):
     if valor == "OUTROS":
         return "AUTO_DELETE"
-    elif "CONTATO" in valor:
+    elif valor == "CONTATO":
         return "AUTO_LEAD"
+    elif valor == "CONTATO S/ TELEFONE":
+        return "AUTO_MAIL"
     elif valor == "SPAM":
         return "AUTO_SPAM"
     elif valor == "EXTRATO":
