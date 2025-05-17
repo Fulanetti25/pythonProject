@@ -22,11 +22,11 @@
         },
         {
             "Nome": "DOC_OPTION",
-            "Xpath": "//*[@id=\"app\"]/div/span[5]/div/ul/div/div/div[1]/li/div/span"
+            "Xpath": ""
         },
         {
             "Nome": "IMG_OPTION",
-            "Xpath": "//*[@id=\"app\"]/div/span[5]/div/ul/div/div/div[2]/li/div"
+            "Xpath": ""
         }
     ]
 }

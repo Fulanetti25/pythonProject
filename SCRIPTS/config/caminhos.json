@@ -1,6 +1,7 @@
 {
     "caminhos": [
 	  {"Nome": "Asset_Images","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\assets\\images\\","Arquivo": ""},
+	  {"Nome": "Local_Asset","Diretorio": "C:\\assets\\","Arquivo": ""},
       {"Nome": "Log_Acompanhamento","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "python.log"},
 	  {"Nome": "Log_Sumarizado","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "pythons.log"},
       {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas_sql.json"},
