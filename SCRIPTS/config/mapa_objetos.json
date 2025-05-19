@@ -16,17 +16,21 @@
             "Nome": "BIG_ARROW",
             "Xpath": "//*[@id=\"app\"]/div/div[3]/div/div[2]/div[2]/span/div/div/div/div[2]/div/div[2]/div[2]/div/div/span"
         },
-        {
-            "Nome": "PLUS_BUTTON",
-            "Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[1]/div/button/span"
-        },
-        {
-            "Nome": "DOC_OPTION",
-            "Xpath": ""
-        },
-        {
-            "Nome": "IMG_OPTION",
-            "Xpath": ""
-        }
+		{
+			"Nome": "PLUS_BUTTON",
+			"Xpath": "//*[@id=\"main\"]/footer/div[1]/div/span/div/div[1]/div/button/span"
+		},
+		{
+			"Nome": "DOC_OPTION",
+			"Xpath": "//*[@id=\"app\"]/div/span[6]/div/ul/div/div/div[1]/li/div/span"
+		},
+		{
+			"Nome": "IMG_OPTION",
+			"Xpath": "//*[@id=\"app\"]/div/span[6]/div/ul/div/div/div[2]/li/div/span"
+		},
+		{
+			"Nome": "TEST_BUTTON",
+			"Xpath": ""
+		}
     ]
 }

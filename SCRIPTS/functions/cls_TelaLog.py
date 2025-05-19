@@ -151,6 +151,29 @@ def tela_inferior_esq(term):
     exibir_texto(term, COLUNA_ESQ, LINHA_TEMPORIZADOR, "Temporizador:", estilo=term.underline + term.bold_green)
 
 
+def tela_inferior_sub_dir(term):
+    exibir_texto(term, COLUNA_DIR, LINHA_TEMPORIZADOR, "Demandas em Fila:", estilo=term.underline + term.bold_green)
+
+    caminhos = json_caminho('Json_Fila_WA')
+    FILA_WA = len(json_dados(os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])))
+    caminhos = json_caminho('Json_Falhas_SQL')
+    FILA_ERROS = len(json_dados(os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])))
+    PROSPECTS = 0
+    PROJETOS = 0
+
+    colunas_kpi = ["FILA_WA", "FILA_ERROS", "PROSPECTS", "PROJETOS"]
+    valores_kpi = [FILA_WA, FILA_ERROS, PROSPECTS, PROJETOS]
+
+    largura_coluna = 13  # espaçamento entre colunas
+    linha_base = LINHA_TEMPORIZADOR + 1  # abaixo do cabeçalho
+    for i, nome in enumerate(colunas_kpi):
+        coluna = COLUNA_DIR + i * largura_coluna
+        exibir_texto(term, coluna, linha_base, nome, estilo=term.bold + term.bold_yellow)
+    for i, valor in enumerate(valores_kpi):
+        coluna = COLUNA_DIR + i * largura_coluna
+        exibir_texto(term, coluna, linha_base + 1, str(valor), estilo=term.bold_white_on_black)
+
+
 def tela_inferior_dir(term):
     # Configuração do cabeçalho dos KPIs
     col_base = COLUNA_DIR
@@ -211,6 +234,7 @@ def desenhar_tela(term, proxima_execucao, processos_filtrados, fake, tempo, exec
         tela_superior_dir(term, processos_filtrados)
         tela_superior_esq(term)
         tela_inferior_dir(term)
+        tela_inferior_sub_dir(term)
     if tempo:
         barra_tempo(term, COLUNA_ESQ, LINHA_TEMPORIZADOR+1, 30, 1)
     elif fake:

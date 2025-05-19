@@ -377,7 +377,7 @@ def fnc_salvar_falha(server, conn_log, sql_query, params):
 	return {"Resultado": "Inserido na pilha", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_reprocessar_falha():
+def fnc_ReprocessarFalhaDB():
 	log_info = "F1"
 	varl_detail = None
 	falhas_sql = json_caminho('Json_Falhas_SQL')
@@ -389,9 +389,10 @@ def fnc_reprocessar_falha():
 
 		log_info = "F3"
 		for falha in pilha:
-			query = falha["query"]
-			params = falha["params"]
-			prc_executa_local(query, params, False)
+			if falha.get("server") in ("SQL_SERVER","UMBLER"):
+				query = falha["query"]
+				params = falha["params"]
+				prc_executa_local(query, params, False)
 
 		log_info = "F0"
 
@@ -403,7 +404,7 @@ def fnc_reprocessar_falha():
 
 	finally:
 		if log_info == "F0":
-			json_limpa(falhas_path)
+			pass
 
 	return {"Resultado": "Pilha Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -441,7 +442,7 @@ def main():
 
 	exec_info += "\t\tMI\n"
 	try:
-		resultado = fnc_reprocessar_falha()
+		resultado = fnc_ReprocessarFalhaDB()
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

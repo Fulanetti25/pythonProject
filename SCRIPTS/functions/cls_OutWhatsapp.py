@@ -13,198 +13,216 @@ from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_reg
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
-def fnc_gerar_xpath(driver, x, y):
+def fnc_gerar_xpath(driver, x, y, width, height):
+	log_info = "F1"
+	varl_detail = None
 	try:
-		# Marca o elemento temporariamente
-		info_elemento = driver.execute_script(f"""
-			var el = document.elementFromPoint({x}, {y});
-			if (el) {{
-				el.setAttribute('data-temp-id', 'fallback-element');
-				return {{
-					'tag': el.tagName,
-					'id': el.id,
-					'class': el.className,
-					'outer': el.outerHTML.slice(0, 300)
-				}};
-			}} else {{
-				return null;
-			}}
-		""")
-
-		if not info_elemento:
-			print(f"[ERRO] Nenhum elemento encontrado nas coordenadas ({x}, {y})")
-			return None
-
-		print(
-			f"[DEBUG] Elemento capturado no ponto ({x},{y}): <{info_elemento['tag']}> id='{info_elemento['id']}' class='{info_elemento['class']}'")
-		print(f"[DEBUG] HTML parcial: {info_elemento['outer']}")
-		print(f"[DEBUG] Elemento visual identificado: <{info_elemento['tag']}>")
-
-		xpath = driver.execute_script("""
-			function getElementXPath(elt) {
-				var path = "";
-				for (; elt && elt.nodeType === 1; elt = elt.parentNode) {
-					var index = 1;
-					for (var sib = elt.previousSibling; sib; sib = sib.previousSibling) {
-						if (sib.nodeType === 1 && sib.tagName === elt.tagName) index++;
-					}
-					var tagName = elt.tagName.toLowerCase();
-					var segment = tagName + "[" + index + "]";
-					path = "/" + segment + path;
+		log_info = "F2"
+		script = """
+		function getXPath(element) {
+			if (element.id !== '') {
+				return 'id(\"' + element.id + '\")';
+			}
+			if (element === document.body) {
+				return element.tagName.toLowerCase();
+			}
+			var ix = 0;
+			var siblings = element.parentNode.childNodes;
+			for (var i=0; i<siblings.length; i++) {
+				var sibling = siblings[i];
+				if (sibling === element) {
+					return getXPath(element.parentNode) + '/' + element.tagName.toLowerCase() + '[' + (ix + 1) + ']';
 				}
-				return path;
+				if (sibling.nodeType === 1 && sibling.tagName === element.tagName) {
+					ix++;
+				}
 			}
-			var el = document.querySelector('[data-temp-id="fallback-element"]');
-			if (el) {
-				return getElementXPath(el);
-			} else {
-				return null;
-			}
-		""")
+		}
 
-		if xpath:
-			print(f"[DEBUG] XPath gerado por JavaScript: {xpath}")
-			try:
-				teste = driver.find_element(By.XPATH, xpath)
-				if teste and teste.is_displayed():
-					print(f"[DEBUG] XPath testado com sucesso: {xpath}")
-					return xpath
-			except:
-				print(f"[ERRO] XPath gerado não encontrado ou não visível: {xpath}")
-				return None
-		else:
-			print("[ERRO] JavaScript não conseguiu gerar o XPath.")
+		var areaX = arguments[0];
+		var areaY = arguments[1];
+		var areaW = arguments[2];
+		var areaH = arguments[3];
+
+		var elements = [];
+		var allElements = document.querySelectorAll('*');
+
+		function intersects(r1, r2) {
+			return !(r2.left > r1.right ||
+					 r2.right < r1.left ||
+					 r2.top > r1.bottom ||
+					 r2.bottom < r1.top);
+		}
+
+		var areaRect = {
+			left: areaX,
+			top: areaY,
+			right: areaX + areaW,
+			bottom: areaY + areaH
+		};
+
+		for (var i=0; i<allElements.length; i++) {
+			var el = allElements[i];
+			var rect = el.getBoundingClientRect();
+
+			// ignorar elementos sem tamanho visível
+			if (rect.width === 0 || rect.height === 0) continue;
+
+			// checar intersecção da bounding box com a área da imagem
+			if (intersects(areaRect, rect)) {
+				elements.push({
+					xpath: getXPath(el),
+					tag: el.tagName.toLowerCase(),
+					text: el.innerText ? el.innerText.trim() : ''
+				});
+			}
+		}
+
+		return elements;
+		"""
+		log_info = "F3"
+		elementos = driver.execute_script(script, x, y, width, height)
+
+		log_info = "F4"
+		if not elementos:
+			print(f"[WARN] Nenhum elemento encontrado na área ({x},{y},{width},{height})")
 			return None
 
-		# Monta XPath absoluto manualmente
-		components = []
-		current = elemento
-		while current.tag_name.lower() != 'html':
-			tag = current.tag_name.lower()
-			parent = current.find_element(By.XPATH, "..")
-			siblings = parent.find_elements(By.XPATH, f"./{tag}")
-			if len(siblings) == 1:
-				components.append(f"{tag}")
-			else:
-				index = 1
-				for sib in siblings:
-					if sib == current:
-						break
-					index += 1
-				components.append(f"{tag}[{index}]")
+		print(f"[INFO] Elementos encontrados na área ({x},{y},{width},{height}):")
+		for i, el in enumerate(elementos):
+			print(f" {i+1}. XPath: {el['xpath']}")
+			print(f"    Tipo: {el['tag']}")
+			print(f"    Texto: {el['text'][:50]}")  # limitar texto para até 50 caracteres
 
-			current = parent
-		print(f"[DEBUG] Componentes capturados para o XPath: {components}")
-		if components:
-			components.append("html")
-			components.reverse()
-			xpath = "/" + "/".join(components)
-
-			# Validação
-			try:
-				teste = driver.find_element(By.XPATH, xpath)
-				if teste and teste.is_displayed():
-					print(f"[DEBUG] XPath testado com sucesso: {xpath}")
-					return xpath
-				else:
-					print(f"[ERRO] XPath gerado não corresponde a um elemento visível.")
-					return None
-			except Exception as e:
-				print(f"[ERRO] XPath gerado não foi encontrado: {xpath}")
-				return None
-		else:
-			print("[ERRO] XPath não pôde ser construído. Lista de componentes vazia.")
-			return None
+		return elementos
 
 	except Exception as e:
-		import traceback
-		trace = traceback.format_exc()
-		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=trace, var_erro=True)
-		return None
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
 
-	finally:
-		try:
-			driver.execute_script("""
-				var el = document.querySelector('[data-temp-id="fallback-element"]');
-				if (el) el.removeAttribute('data-temp-id');
-			""")
-		except:
-			pass
+
+def fnc_fallback_imagem(driver, nome_objeto, caminho):
+	import cv2
+
+	log_info = "F1"
+	varl_detail = None
+
+	try:
+		log_info = "F2"
+		screenshot_path = os.path.join(caminho, "tela_atual.png")
+		time.sleep(5)
+		pyautogui.screenshot(screenshot_path)
+		screenshot = cv2.imread(screenshot_path)
+
+		mapa_imagens = json_caminho('Local_Asset')
+
+		log_info = "F3"
+		for nome_arquivo in os.listdir(caminho):
+			if nome_objeto.lower() in nome_arquivo.lower() and nome_arquivo.lower().endswith('.png'):
+				caminho_template = os.path.join(mapa_imagens['Diretorio'], nome_arquivo)
+				template = cv2.imread(caminho_template)
+
+				if template is None or screenshot is None:
+					print(f"[ERRO] Falha ao carregar imagens para '{nome_objeto}'")
+					return None
+
+				res = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+				min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+				limiar = 0.85
+				if max_val >= limiar:
+					top_left = max_loc
+					h, w = template.shape[:2]
+					bottom_right = (top_left[0] + w, top_left[1] + h)
+					cv2.rectangle(screenshot, top_left, bottom_right, (0, 0, 255), 2)
+					cv2.imwrite(screenshot_path, screenshot)
+					print(f"[INFO] Imagem localizada na screenshot para '{nome_objeto}' em: {top_left} com confiança {max_val:.2f}")
+					fnc_gerar_xpath(driver, top_left[0], top_left[1], w, h)
+				else:
+					print(f"[WARN] Imagem '{nome_objeto}' não localizada na screenshot com confiança mínima {limiar}")
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
 
 
 def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
-	import cv2
+	log_info = "F1"
+	varl_detail = None
 	from selenium.webdriver.common.by import By
 	from selenium.webdriver.support.ui import WebDriverWait
 	from selenium.webdriver.support import expected_conditions as EC
 
-	mapa_objetos = json_caminho('Json_Mapa_Objetos')
-	mapa_imagens = json_caminho('Local_Asset')
-	caminho_json = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
-	dados_objetos = json_dados(caminho_json)
+	try:
+		log_info = "F2"
+		mapa_objetos = json_caminho('Json_Mapa_Objetos')
+		mapa_imagens = json_caminho('Local_Asset')
+		caminho_json = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
+		dados_objetos = json_dados(caminho_json)
 
-	xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == nome_objeto), None)
-	# 1. Tenta localizar com XPath (caso exista)
-	if xpath:
-		try:
-			elemento = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
-			if elemento.is_displayed() and elemento.is_enabled():
-				print(f"[INFO] Elemento localizado com XPath original para '{nome_objeto}'")
-				return elemento
-			else:
-				print(f"[WARN] Elemento encontrado com XPath mas não está visível ou habilitado para '{nome_objeto}'")
-				raise Exception("Elemento não interativo")
-		except Exception:
-			log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"XPath inválido ou elemento não interativo para '{nome_objeto}'", var_erro=True)
+		log_info = "F3"
+		xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == nome_objeto), None)
+		if xpath:
+			try:
+				elemento = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
+				if elemento.is_displayed() and elemento.is_enabled():
+					print(f"[INFO] Elemento localizado com XPath original para '{nome_objeto}'")
+					return elemento
+				else:
+					print(f"[WARN] Elemento encontrado com XPath mas não está visível ou habilitado para '{nome_objeto}'")
+					raise Exception("Elemento não interativo")
+			except Exception:
+				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"XPath inválido ou elemento não interativo para '{nome_objeto}'", var_erro=True)
+		else:
+			print(f"[INFO] Executando fallback visual para '{nome_objeto}'...")
+			fnc_fallback_imagem(driver, nome_objeto, mapa_imagens['Diretorio'])
+		log_info = "F0"
 
-	# 2. Fallback por imagem (sempre que XPath estiver vazio ou falhar)
-	print(f"[INFO] Executando fallback visual para '{nome_objeto}'...")
-	screenshot_path = os.path.join(mapa_imagens['Diretorio'], "tela_atual.png")
-	time.sleep(5)
-	pyautogui.screenshot(screenshot_path)
-	screenshot = cv2.imread(screenshot_path, cv2.IMREAD_GRAYSCALE)
-
-	for nome_arquivo in os.listdir(mapa_imagens['Diretorio']):
-		if nome_objeto.lower() in nome_arquivo.lower() and nome_arquivo.lower().endswith(('.png')):
-			caminho_template = os.path.join(mapa_imagens['Diretorio'], nome_arquivo)
-			local = pyautogui.locateOnScreen(caminho_template, confidence=0.85)
-			if local:
-				print(f"[INFO] Imagem localizada na tela para '{nome_objeto}' em: {local}")
-				centro = pyautogui.center(local)
-				try:
-					# Converte coordenadas da tela para a viewport (ajuste conforme necessário)
-					x_tela, y_tela = centro.x, centro.y
-					el_tag = driver.execute_script(f"""
-					    var el = document.elementFromPoint({x_tela}, {y_tela});
-					    if (el) {{
-					        el.setAttribute('data-temp-id', 'fallback-element');
-					        return el.tagName;
-					    }} else {{
-					        return null;
-					    }}
-					""")
-					print(f"[DEBUG] Tag HTML capturada no ponto ({x_tela},{y_tela}): {el_tag}")
-					if not el_tag:
-						print("[ERRO] Nenhum elemento encontrado visualmente.")
-						return None
-					novo_xpath = fnc_gerar_xpath(driver, x_tela, y_tela)
-
-					print(f"[INFO] XPath gerado a partir da imagem de '{nome_objeto}': {novo_xpath}")
-					breakpoint()
-					# if novo_xpath:
-					# 	prc_atualiza_xpath_json(nome_objeto, novo_xpath)
-					# 	log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"XPath alternativo atualizado para '{nome_objeto}': {novo_xpath}")
-					# 	elemento_novo = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, novo_xpath)))
-					# 	return elemento_novo
-				except:
-					print(f"[ERRO] Falha ao localizar '{nome_objeto}' por XPath e imagem.")
-					return None
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
 
 
 def prc_atualiza_xpath_json(nome_objeto, novo_xpath):
 	mapa_objetos = json_caminho('Json_Mapa_Objetos')
 	caminho_json = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
 	json_atualiza(caminho_json, 'objetos', nome_objeto, 'Xpath', novo_xpath)
+
+
+def fnc_ReprocessarFalhaWA():
+	log_info = "F1"
+	varl_detail = None
+	falhas_sql = json_caminho('Json_Falhas_SQL')
+	falhas_path = os.path.join(falhas_sql['Diretorio'], falhas_sql['Arquivo'])
+
+	try:
+		log_info = "F2"
+		fila = json_dados(falhas_path)
+
+		log_info = "F3"
+		if fila:
+			prc_executa_fila(fila)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"{log_info}, {e}"
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	finally:
+		if log_info == "F0":
+			json_limpa(falhas_path, 'WHATSAPP')
+
+	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def fnc_ProcessarFila():
@@ -231,8 +249,7 @@ def fnc_ProcessarFila():
 
 	finally:
 		if log_info == "F0":
-			pass
-			# json_limpa(filas_path)
+			json_limpa(filas_path, 'WHATSAPP')
 
 	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -311,7 +328,6 @@ def fnc_envia_fila(driver, fila):
 					objeto.click()
 
 					time.sleep(5)
-					print(anexo)
 					os.system(f'echo {anexo} | clip')
 					pyautogui.hotkey('ctrl', 'v')
 					pyautogui.press('enter')
@@ -319,13 +335,11 @@ def fnc_envia_fila(driver, fila):
 				if anexo:
 					log_info = "F6"
 					nome_objeto = 'BIG_ARROW'
-					print('Seta Grande')
 				else:
 					log_info = "F7"
 					nome_objeto = 'SEND_ARROW'
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				objeto.click()
-				print('Enviou')
 				time.sleep(10)
 
 				result.append({'numero': numero, 'status': 'OK'})

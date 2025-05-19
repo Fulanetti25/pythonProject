@@ -39,13 +39,16 @@ def json_registra(dados, arquivo=r"G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\l
         print(f"Erro ao escrever no arquivo JSON: {e}")
 
 
-def json_limpa(arquivo):
+def json_limpa(arquivo, filtro_server):
     try:
+        with open(arquivo, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        dados_filtrados = [item for item in dados if item.get("server") != filtro_server]
         with open(arquivo, "w", encoding="utf-8") as f:
-            json.dump([], f, indent=4, ensure_ascii=False)
-        print(f"Arquivo JSON limpo com sucesso: {arquivo}")
-    except IOError as e:
-        print(f"Erro ao limpar o arquivo JSON: {e}")
+            json.dump(dados_filtrados, f, indent=4, ensure_ascii=False)
+        print(f"Arquivo JSON limpo com filtro: {filtro_server} => {arquivo}")
+    except Exception as e:
+        print(f"Erro ao limpar com filtro o arquivo JSON: {e}")
 
 
 def json_atualiza(arquivo, grupo, nome, campo, atualizacao):

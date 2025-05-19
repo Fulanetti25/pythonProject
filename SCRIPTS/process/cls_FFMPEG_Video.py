@@ -142,24 +142,25 @@ def fnc_unificar_videos(diretorio: str):
 
 
 def fnc_cortes_preto(arquivo: str):
-	# Definindo o nome do arquivo de saída
+	log_info = "F1"
+	varl_detail = None
 	diretorio = os.path.dirname(arquivo)
 	nome_base = os.path.basename(arquivo)[:8]
 	arquivo_saida = os.path.join(diretorio, f"{nome_base}_Highlights Sub99.mp4")
 
-	# Passo 1: Detectar os quadros pretos no vídeo
+	log_info = "F2"
 	comando = [
 		"ffmpeg", "-i", arquivo, "-vf", "blackdetect=d=0.1:pix_th=0.10", "-an", "-f", "null", "-"
 	]
 
-	# Executando o comando e pegando a saída
+	log_info = "F3"
 	process = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	stdout, stderr = process.communicate()
 
-	# Depuração: Exibir a saída completa para verificar se há informações úteis
+	log_info = "F4"
 	print(stderr.decode())
 
-	# Passo 2: Processar os tempos de corte
+	log_info = "F5"
 	cortes = []
 	for line in stderr.decode().split("\n"):
 		if "black_start" in line:
@@ -175,7 +176,7 @@ def fnc_cortes_preto(arquivo: str):
 		print("Nenhum quadro preto encontrado no vídeo.")
 		return None
 
-	# Passo 3: Criar os cortes no vídeo
+	log_info = "F6"
 	lista_cortes = []
 	for i, (start_time, end_time) in enumerate(cortes):
 		comando_corte = [
@@ -193,13 +194,13 @@ def fnc_cortes_preto(arquivo: str):
 		print("Nenhum corte válido foi gerado.")
 		return None
 
-	# Passo 4: Unificar os cortes em um único arquivo de saída
+	log_info = "F7"
 	lista_cortes_txt = os.path.join(diretorio, "lista_cortes.txt")
 	with open(lista_cortes_txt, "w") as f:
 		for corte in lista_cortes:
 			f.write(f"file '{corte}'\n")
 
-	# Comando para unir os vídeos cortados
+	log_info = "F8"
 	comando_unir = [
 		"ffmpeg", "-f", "concat", "-safe", "0", "-i", lista_cortes_txt,
 		"-c:v", "copy", "-c:a", "copy", "-y", arquivo_saida
@@ -212,7 +213,7 @@ def fnc_cortes_preto(arquivo: str):
 		print(f"Erro ao unir os cortes: {e}")
 		return None
 
-	# Passo 5: Limpar os arquivos temporários (cortes individuais)
+	log_info = "F9"
 	for corte in lista_cortes:
 		os.remove(corte)
 	os.remove(lista_cortes_txt)
@@ -711,7 +712,7 @@ def prc_processa_fut():
 
 
 def main():
-	prc_processa_dmb()
+	prc_processa_fut()
 
 
 if __name__ == "__main__":
