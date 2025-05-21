@@ -3,7 +3,7 @@ from datetime import datetime
 
 def json_caminho(nome = 'Json_Caminhos'):
      try:
-        with open(r"C:\Users\paulo\OneDrive\Documentos\Programação\pythonProject\SCRIPTS\config\caminhos.json", "r", encoding="utf-8") as arquivo_json:
+        with open(r"C:\Users\paulo\OneDrive\Documentos\github\pythonProject\SCRIPTS\config\caminhos.json", "r", encoding="utf-8") as arquivo_json:
             dados = json.load(arquivo_json)
             caminhos = dados.get("caminhos", [])
             resultado = next((item for item in caminhos if item.get('Nome') == nome), None)
@@ -16,7 +16,7 @@ def json_caminho(nome = 'Json_Caminhos'):
         return []
 
 
-def json_dados(arquivo=r'C:\Users\paulo\OneDrive\Documentos\Programação\pythonProject\SCRIPTS\config\caminhos.json'):
+def json_dados(arquivo):
     try:
         with open(arquivo, "r", encoding="utf-8") as arquivo_json:
             dados = json.load(arquivo_json)
@@ -30,7 +30,7 @@ def json_dados(arquivo=r'C:\Users\paulo\OneDrive\Documentos\Programação\python
         return []
 
 
-def json_registra(dados, arquivo=r"G:\Meu Drive\PSM\01 - OPERACIONAL\00_FONTES\logs\falhas_sql.json"):
+def json_registra(dados, arquivo):
     try:
         with open(arquivo, "w", encoding="utf-8") as arquivo_json:
             json.dump(dados, arquivo_json, indent=4, ensure_ascii=False)
@@ -79,10 +79,6 @@ def json_atualiza(arquivo, grupo, nome, campo, atualizacao):
 
 def main():
     print(json_caminho())
-    # print(json_dados())
-    # dados_teste = {"server": "server_teste", "log": "log_teste", "query": "query_teste", "params": "params_teste",	"timestamp": str(datetime.now())}
-    # print(json_registra(dados_teste))
-    # print(json_atualiza(r"C:\Users\paulo\OneDrive\Documentos\Programação\pythonProject\SCRIPTS\config\mapa_objetos.json", 'objetos', 'Json_Falhas_SQL', 'Xpath', 'teste_bunda2'))
 
 
 if __name__ == "__main__":

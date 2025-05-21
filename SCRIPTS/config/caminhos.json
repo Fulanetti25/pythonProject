@@ -1,11 +1,11 @@
 {
     "caminhos": [
-	  {"Nome": "Asset_Images","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\assets\\images\\","Arquivo": ""},
+	  {"Nome": "Asset_Images","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\assets\\images\\","Arquivo": ""},
 	  {"Nome": "Local_Asset","Diretorio": "C:\\assets\\","Arquivo": ""},
       {"Nome": "Log_Acompanhamento","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "python.log"},
 	  {"Nome": "Log_Sumarizado","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "pythons.log"},
-	  {"Nome": "Json_Fila_WA","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "fila_wa.json"},
-      {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas_sql.json"},
+	  {"Nome": "Json_Fila_WA","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "fila.json"},
+      {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas.json"},
       {"Nome": "Base_Projetos_Excel","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "projetos.csv"},
       {"Nome": "Base_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "gantt.csv"},
       {"Nome": "Imagem_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "grafico_gantt.png"},
@@ -18,17 +18,17 @@
       {"Nome": "Notas_Extrato","Diretorio": "G:\\Meu Drive\\PSM\\02 - FINANCEIRO\\NOTAS","Arquivo": "notas_extrato.csv"},
       {"Nome": "Entrada_GoPro","Diretorio": "C:\\Users\\paulo\\Downloads\\TEMP\\","Arquivo": ""},
       {"Nome": "Chrome_Profile","Diretorio": "C:\\Users\\Paulo\\AppData\\Local\\Google\\Chrome\\User Data\\","Arquivo": "Profile 1"},
-      {"Nome": "Json_Caminhos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "caminhos.json"},
+      {"Nome": "Json_Caminhos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "caminhos.json"},
       {"Nome": "Json_VideosDrumeibes","Diretorio": "C:\\Users\\paulo\\Downloads\\TEMP\\DRUMEIBES\\FILA\\","Arquivo":  ""},
       {"Nome": "Json_VideosFute","Diretorio": "C:\\Users\\paulo\\Downloads\\TEMP\\FUTE\\","Arquivo":  ""},
-      {"Nome": "Json_Processos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "processos.json"},
-      {"Nome": "Json_Mapa_Objetos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mapa_objetos.json"},
-      {"Nome": "Json_Horarios","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "horarios.json"},
-      {"Nome": "Json_MailSpam","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mailspam.json"},
-      {"Nome": "Json_LogCodes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "logcodes.json"},
-      {"Nome": "Json_Palavras","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "palavras.json"},
-      {"Nome": "Json_Drumeibes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "drumeibes.json"},
-      {"Nome": "Json_Roobet","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\","Arquivo": "mapa_objetos.json"},
-      {"Nome": "Mail_ContatoInvalido","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\Programação\\pythonProject\\SCRIPTS\\config\\","Arquivo": "contato_invalido.json"}
+      {"Nome": "Json_Processos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "processos.json"},
+      {"Nome": "Json_Mapa_Objetos","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mapa_objetos.json"},
+      {"Nome": "Json_Horarios","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "horarios.json"},
+      {"Nome": "Json_MailSpam","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "mailspam.json"},
+      {"Nome": "Json_LogCodes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "logcodes.json"},
+      {"Nome": "Json_Palavras","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "palavras.json"},
+      {"Nome": "Json_Drumeibes","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "drumeibes.json"},
+      {"Nome": "Json_Roobet","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\","Arquivo": "mapa_objetos.json"},
+      {"Nome": "Mail_ContatoInvalido","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\github\\pythonProject\\SCRIPTS\\config\\","Arquivo": "contato_invalido.json"}
     ]
 }

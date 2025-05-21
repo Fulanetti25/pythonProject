@@ -171,7 +171,10 @@ def tela_inferior_sub_dir(term):
         exibir_texto(term, coluna, linha_base, nome, estilo=term.bold + term.bold_yellow)
     for i, valor in enumerate(valores_kpi):
         coluna = COLUNA_DIR + i * largura_coluna
-        exibir_texto(term, coluna, linha_base + 1, str(valor), estilo=term.bold_white_on_black)
+        if valor > 0:
+            exibir_texto(term, coluna, linha_base + 1, str(valor), estilo=term.bold_red)
+        else:
+            exibir_texto(term, coluna, linha_base + 1, str(valor), estilo=term.bold_white_on_black)
 
 
 def tela_inferior_dir(term):

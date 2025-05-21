@@ -47,6 +47,7 @@ def prc_connect_email():
         varl_detail = f"Erro na etapa {log_info}, {e}"
         log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
         log_info = "F99"
+        raise
 
     return {"Resultado": mail, 'Status_log': log_info, 'Detail_log': varl_detail}
 
