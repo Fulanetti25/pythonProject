@@ -90,10 +90,28 @@ def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
 					print(f"[WARN] Elemento encontrado com XPath mas não está visível ou habilitado para '{nome_objeto}'")
 					raise Exception("Elemento não interativo")
 			except Exception:
-				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"XPath inválido ou elemento não interativo para '{nome_objeto}'", var_erro=True)
+				pass
 		else:
 			print(f"[INFO] Executando fallback visual para '{nome_objeto}'...")
 			fnc_fallback_imagem(driver, nome_objeto, mapa_imagens['Diretorio'])
+
+		print(f"[ERRO] Objeto '{nome_objeto}' não localizado. Tentando limpar MESSAGE_BOX antes de abortar...")
+		try:
+			search_xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == 'MESSAGE_BOX'),None)
+			if search_xpath:
+				search_box = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, search_xpath)))
+				search_box.click()
+				search_box.send_keys(Keys.CONTROL + "a")
+				search_box.send_keys(Keys.DELETE)
+				print("[INFO] SEARCH_BOX limpa com sucesso.")
+			else:
+				print("[WARN] XPath de SEARCH_BOX não encontrado no JSON.")
+		except Exception as e:
+			print(f"[ERRO] Falha ao tentar limpar SEARCH_BOX: {e}")
+
+		breakpoint()
+		return None
+
 		log_info = "F0"
 
 	except Exception as e:

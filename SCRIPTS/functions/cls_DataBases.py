@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 from sqlalchemy import create_engine
 from decouple import config
-from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_limpa
+from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_Logging import main as log_registra
 

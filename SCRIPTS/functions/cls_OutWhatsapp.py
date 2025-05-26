@@ -9,7 +9,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from SCRIPTS.functions.cls_Logging import main as log_registra
-from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_limpa, json_atualiza
+from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra, json_deleta, json_atualiza
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
@@ -219,8 +219,7 @@ def fnc_ReprocessarFalhaWA():
 		raise
 
 	finally:
-		if log_info == "F0":
-			json_limpa(falhas_path, 'WHATSAPP')
+		pass
 
 	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -237,7 +236,7 @@ def fnc_ProcessarFila():
 
 		log_info = "F3"
 		if fila:
-			prc_executa_fila(fila)
+			prc_executa_fila(filas_path)
 
 		log_info = "F0"
 
@@ -248,8 +247,7 @@ def fnc_ProcessarFila():
 		raise
 
 	finally:
-		if log_info == "F0":
-			json_limpa(filas_path, 'WHATSAPP')
+		pass
 
 	return {"Resultado": "Fila Reprocessada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
@@ -282,17 +280,20 @@ def prc_executa_fila(fila):
 	return {"Resultado": "Executado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_envia_fila(driver, fila):
+def fnc_envia_fila(driver, fila_path):
 	log_info = "F1"
 	varl_detail = None
 	result = []
 	xpath = None
 	driver.get("https://web.whatsapp.com")
 	time.sleep(10)
+	fila = json_dados(fila_path)
 
 	try:
 		for item in fila:
 			try:
+				data = item['data']
+				server = item['server']
 				numero = item['numero']
 				mensagem = item['mensagem']
 				anexo = item['anexo']
@@ -342,14 +343,16 @@ def fnc_envia_fila(driver, fila):
 				objeto.click()
 				time.sleep(10)
 
-				result.append({'numero': numero, 'status': 'OK'})
+				log_info = "F0"
+				result.append({'numero': numero, 'status': log_info})
+				json_deleta(fila_path, server, data)
 
 			except Exception as e_item:
 				varl_detail = f"{log_info}, {e_item}"
 				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-				fnc_SalvarFalha('WHATSAPP', varl_detail, numero, mensagem, anexo)
+				fnc_SalvarFalha(server, data, varl_detail, numero, mensagem, anexo)
 				result.append({'numero': numero, 'status': 'FALHA'})
-				continue  # segue com o próximo item da fila
+				continue
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
@@ -419,7 +422,7 @@ def fnc_close_whats(driver):
 	return {"Resultado": "Conexão fechada", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def fnc_SalvarFalha(server, varl_detail, numero, mensagem, anexo):
+def fnc_SalvarFalha(server, data, varl_detail, numero, mensagem, anexo):
 	log_info = "F1"
 	falhas_sql = json_caminho('Json_Falhas_SQL')
 	falhas_dados = json_dados(os.path.join(falhas_sql['Diretorio'], falhas_sql['Arquivo']))
@@ -429,6 +432,7 @@ def fnc_SalvarFalha(server, varl_detail, numero, mensagem, anexo):
 		pilha = falhas_dados if falhas_dados else []
 		falha = {
 			"server": server,
+			"data": data,
 			"log": varl_detail,
 			"numero": numero,
 			"mensagem": mensagem,
@@ -462,7 +466,8 @@ def fnc_SalvarFila(numero, mensagem, anexo):
 		log_info = "F2"
 		pilha = falhas_dados if falhas_dados else []
 		fila = {
-			"Data": datetime.now().isoformat(),
+			"server": "WHATSAPP",
+			"data": datetime.now().isoformat(),
 			"numero": numero,
 			"mensagem": mensagem,
 			"anexo": anexo,

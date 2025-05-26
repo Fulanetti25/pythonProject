@@ -269,9 +269,9 @@ def fnc_movimentacoes():
 		log_info = "F3"
 		# Define intervalo da semana anterior (segunda a domingo)
 		hoje = datetime.today().date()
-		inicio_semana = hoje - timedelta(days=hoje.weekday() + 7)  # Segunda passada
-		fim_semana = inicio_semana + timedelta(days=6)  # Domingo passado
-		df_resultados = df[(df['Data'] >= pd.to_datetime(inicio_semana)) & (df['Data'] <= pd.to_datetime(fim_semana))].copy()
+		inicio_semana = hoje - timedelta(days=hoje.weekday())
+
+		df_resultados = df[(df['Data'] >= pd.to_datetime(inicio_semana)) & (df['Data'] <= pd.to_datetime(hoje))].copy()
 
 		log_info = "F4"
 		# (Opcional) Adiciona nome de conta legível

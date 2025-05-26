@@ -39,14 +39,14 @@ def json_registra(dados, arquivo):
         print(f"Erro ao escrever no arquivo JSON: {e}")
 
 
-def json_limpa(arquivo, filtro_server):
+def json_deleta(arquivo, filtro_server, filtro_data):
     try:
         with open(arquivo, "r", encoding="utf-8") as f:
             dados = json.load(f)
-        dados_filtrados = [item for item in dados if item.get("server") != filtro_server]
+        dados_filtrados = [item for item in dados if not (item.get("server") == filtro_server and item.get("data") == filtro_data)]
         with open(arquivo, "w", encoding="utf-8") as f:
             json.dump(dados_filtrados, f, indent=4, ensure_ascii=False)
-        print(f"Arquivo JSON limpo com filtro: {filtro_server} => {arquivo}")
+        print(f"Deletado um registro com filtro: {filtro_server}")
     except Exception as e:
         print(f"Erro ao limpar com filtro o arquivo JSON: {e}")
 
@@ -78,8 +78,7 @@ def json_atualiza(arquivo, grupo, nome, campo, atualizacao):
 
 
 def main():
-    print(json_caminho())
-
+    pass
 
 if __name__ == "__main__":
     main()
