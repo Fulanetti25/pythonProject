@@ -14,7 +14,7 @@
     {
       "Horario": "07:03",
       "Frequencia": "Intervalo",
-      "Intervalo": "03:00",
+      "Intervalo": "02:00",
       "Dia": "All",
       "Classe": "cls_OutWhatsapp",
       "Nome": "Disparo da Fila no WA",

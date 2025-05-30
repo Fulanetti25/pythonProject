@@ -13,7 +13,25 @@ from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_reg
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
-def fnc_gerar_xpath(driver, x, y, width, height):
+def fnc_limpa_campos(driver, nome_objeto, timeout=10):
+	try:
+		elemento = fnc_localiza_objeto(driver, nome_objeto, timeout)
+		if not elemento:
+			raise Exception("Elemento não encontrado.")
+		tag = elemento.tag_name.lower()
+		if tag in ['input', 'textarea']:
+			elemento.clear()
+		else:
+			elemento.send_keys(Keys.CONTROL + "a")
+			elemento.send_keys(Keys.DELETE)
+
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"Campo '{nome_objeto}' limpo com sucesso.", var_erro=False)
+
+	except Exception as e:
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"Erro ao limpar o campo '{nome_objeto}': {e}", var_erro=True)
+
+
+def fnc_gerar_xpath(driver, x, y, width, height, filtro_texto=None):
 	log_info = "F1"
 	varl_detail = None
 	try:
@@ -87,14 +105,21 @@ def fnc_gerar_xpath(driver, x, y, width, height):
 		if not elementos:
 			print(f"[WARN] Nenhum elemento encontrado na área ({x},{y},{width},{height})")
 			return None
-
-		print(f"[INFO] Elementos encontrados na área ({x},{y},{width},{height}):")
-		for i, el in enumerate(elementos):
+		if filtro_texto:
+			elementos_filtrados = [el for el in elementos if filtro_texto.lower() in el['text'].lower()]
+		else:
+			elementos_filtrados = elementos
+		if not elementos_filtrados:
+			print(f"[WARN] Nenhum elemento encontrado com o texto '{filtro_texto}' na área ({x},{y},{width},{height})")
+			return None
+		print(f"[INFO] Elementos filtrados na área ({x},{y},{width},{height}):")
+		for i, el in enumerate(elementos_filtrados):
 			print(f" {i+1}. XPath: {el['xpath']}")
 			print(f"    Tipo: {el['tag']}")
-			print(f"    Texto: {el['text'][:50]}")  # limitar texto para até 50 caracteres
+			print(f"    Texto: {el['text'][:50]}")
 
-		return elementos
+		return elementos_filtrados
+
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
@@ -103,30 +128,26 @@ def fnc_gerar_xpath(driver, x, y, width, height):
 		raise
 
 
-def fnc_fallback_imagem(driver, nome_objeto, caminho):
+def fnc_fallback_imagem(driver, nome_objeto, caminho_asset, arquivo_dict):
 	import cv2
-
 	log_info = "F1"
 	varl_detail = None
 
 	try:
 		log_info = "F2"
-		screenshot_path = os.path.join(caminho, "tela_atual.png")
+		screenshot_path = os.path.join(caminho_asset, "tela_atual.png")
 		time.sleep(5)
 		pyautogui.screenshot(screenshot_path)
 		screenshot = cv2.imread(screenshot_path)
 
-		mapa_imagens = json_caminho('Local_Asset')
-
 		log_info = "F3"
-		for nome_arquivo in os.listdir(caminho):
+		for nome_arquivo in os.listdir(caminho_asset):
 			if nome_objeto.lower() in nome_arquivo.lower() and nome_arquivo.lower().endswith('.png'):
-				caminho_template = os.path.join(mapa_imagens['Diretorio'], nome_arquivo)
+				caminho_template = os.path.join(caminho_asset, nome_arquivo)
 				template = cv2.imread(caminho_template)
 
 				if template is None or screenshot is None:
-					print(f"[ERRO] Falha ao carregar imagens para '{nome_objeto}'")
-					return None
+					raise Exception(f"Erro ao carregar imagens para '{nome_objeto}'")
 
 				res = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
 				min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -139,10 +160,29 @@ def fnc_fallback_imagem(driver, nome_objeto, caminho):
 					cv2.rectangle(screenshot, top_left, bottom_right, (0, 0, 255), 2)
 					cv2.imwrite(screenshot_path, screenshot)
 					print(f"[INFO] Imagem localizada na screenshot para '{nome_objeto}' em: {top_left} com confiança {max_val:.2f}")
-					fnc_gerar_xpath(driver, top_left[0], top_left[1], w, h)
+
+					# buscar texto associado ao nome do objeto
+					texto_referencia = None
+					dados_dict = json_dados(arquivo_dict)['objetos']
+					for item in dados_dict:
+						if item['Nome'] == nome_objeto:
+							texto_referencia = item.get('Texto', None)
+							break
+					print('Buscando: ', texto_referencia)
+					elementos = fnc_gerar_xpath(driver, top_left[0], top_left[1], w, h, texto_referencia)
+					if elementos:
+						print("[INFO] Elementos HTML detectados visualmente na região da imagem:")
+						for idx, el in enumerate(elementos, start=1):
+							print(f" {idx:02d}) XPath: {el['xpath']}")
+							if 'texto' in el and el['texto']:
+								print(f"     Texto: {el['texto']}")
+							if 'tag' in el:
+								print(f"     Tag: {el['tag']}")
+						print("[INFO] Selecione e edite o JSON manualmente se necessário.")
+					return elementos
 				else:
-					print(f"[WARN] Imagem '{nome_objeto}' não localizada na screenshot com confiança mínima {limiar}")
-		log_info = "F0"
+					print(f"[WARN] Imagem '{nome_objeto}' não localizada com confiança mínima de {limiar}")
+		raise Exception(f"Nenhum arquivo de imagem encontrado para '{nome_objeto}' no diretório '{caminho_asset}'.")
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
@@ -162,8 +202,8 @@ def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
 		log_info = "F2"
 		mapa_objetos = json_caminho('Json_Mapa_Objetos')
 		mapa_imagens = json_caminho('Local_Asset')
-		caminho_json = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
-		dados_objetos = json_dados(caminho_json)
+		arquivo_dict = os.path.join(mapa_objetos['Diretorio'], mapa_objetos['Arquivo'])
+		dados_objetos = json_dados(arquivo_dict)
 
 		log_info = "F3"
 		xpath = next((item["Xpath"] for item in dados_objetos["objetos"] if item["Nome"] == nome_objeto), None)
@@ -174,18 +214,35 @@ def fnc_localiza_objeto(driver, nome_objeto, timeout=30):
 					print(f"[INFO] Elemento localizado com XPath original para '{nome_objeto}'")
 					return elemento
 				else:
-					print(f"[WARN] Elemento encontrado com XPath mas não está visível ou habilitado para '{nome_objeto}'")
-					raise Exception("Elemento não interativo")
-			except Exception:
-				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=f"XPath inválido ou elemento não interativo para '{nome_objeto}'", var_erro=True)
-		else:
-			print(f"[INFO] Executando fallback visual para '{nome_objeto}'...")
-			fnc_fallback_imagem(driver, nome_objeto, mapa_imagens['Diretorio'])
-		log_info = "F0"
+					print(f"[WARN] XPath encontrado, mas elemento não está visível ou habilitado: '{nome_objeto}'")
+			except Exception as e:
+				print(f"[ERRO] Falha ao localizar XPath '{xpath}' para '{nome_objeto}': {e}")
+
+		log_info = "F99"
+		print(f"[INFO] Executando fallback visual para '{nome_objeto}'...")
+		elementos = fnc_fallback_imagem(driver, nome_objeto, mapa_imagens['Diretorio'], arquivo_dict)
+
+		if not elementos or not isinstance(elementos, list) or len(elementos) == 0:
+			raise Exception(f"Falha crítica: elemento '{nome_objeto}' não encontrado nem por XPath nem por imagem.")
+
+		elemento_xpath = elementos[0].get('xpath')
+		if not elemento_xpath:
+			raise Exception(f"Falha crítica: fallback retornou estrutura inválida para '{nome_objeto}'.")
+
+		try:
+			print(f"[DEBUG] Tentando localizar XPath gerado: {elemento_xpath}")
+			elemento = WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, elemento_xpath)))
+			if elemento.is_displayed() and elemento.is_enabled():
+				print(f"[INFO] Elemento recuperado via fallback pelo XPath gerado.")
+				return elemento
+			else:
+				raise Exception(f"Elemento localizado visualmente mas não está acessível.")
+		except Exception as e:
+			raise Exception(f"XPath localizado visualmente, mas elemento não acessível: {e}")
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
-		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name,	var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
 		raise
 
@@ -208,7 +265,7 @@ def fnc_ReprocessarFalhaWA():
 
 		log_info = "F3"
 		if fila:
-			prc_executa_fila(fila)
+			prc_executa_fila(falhas_path)
 
 		log_info = "F0"
 
@@ -284,13 +341,12 @@ def fnc_envia_fila(driver, fila_path):
 	log_info = "F1"
 	varl_detail = None
 	result = []
-	xpath = None
 	driver.get("https://web.whatsapp.com")
 	time.sleep(10)
 	fila = json_dados(fila_path)
 
 	try:
-		for item in fila:
+		for idx, item in enumerate(fila):
 			try:
 				data = item['data']
 				server = item['server']
@@ -300,6 +356,7 @@ def fnc_envia_fila(driver, fila_path):
 
 				log_info = "F2"
 				nome_objeto = 'SEARCH_BOX'
+				limpeza = fnc_limpa_campos(driver, nome_objeto)
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				objeto.click()
 				objeto.send_keys(numero)
@@ -307,6 +364,7 @@ def fnc_envia_fila(driver, fila_path):
 
 				log_info = "F3"
 				nome_objeto = 'MESSAGE_BOX'
+				limpeza = fnc_limpa_campos(driver, nome_objeto)
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				for linha in mensagem.split('\n'):
 					objeto.send_keys(linha)
@@ -334,10 +392,10 @@ def fnc_envia_fila(driver, fila_path):
 					pyautogui.press('enter')
 
 				if anexo:
-					log_info = "F6"
+					log_info = "F6.1"
 					nome_objeto = 'BIG_ARROW'
 				else:
-					log_info = "F7"
+					log_info = "F6.2"
 					nome_objeto = 'SEND_ARROW'
 				objeto = fnc_localiza_objeto(driver, nome_objeto, timeout=30)
 				objeto.click()
@@ -350,6 +408,7 @@ def fnc_envia_fila(driver, fila_path):
 			except Exception as e_item:
 				varl_detail = f"{log_info}, {e_item}"
 				log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+				json_deleta(fila_path, server, data)
 				fnc_SalvarFalha(server, data, varl_detail, numero, mensagem, anexo)
 				result.append({'numero': numero, 'status': 'FALHA'})
 				continue
@@ -504,6 +563,7 @@ def main():
 	exec_info += "\t\tMI\n"
 	try:
 		resultado = fnc_ProcessarFila()
+		# resultado = fnc_ReprocessarFalhaWA()
 		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
 		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
 		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"

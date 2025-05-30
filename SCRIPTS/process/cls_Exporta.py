@@ -12,13 +12,14 @@ from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 def etl_ExportaProjetos():
 	log_info = "F1"
 	varl_detail = None
-	caminhos = json_caminho('Base_Projetos_Excel')
-	file_dir = caminhos['Diretorio']
-	file_name = os.path.join(file_dir, caminhos['Arquivo'])
+	caminho_destino = json_caminho('Base_Projetos_Excel')
+	caminho_origem = json_caminho('Base_PSM_Excel')
+	arquivo_destino = os.path.join(caminho_destino['Diretorio'], caminho_destino['Arquivo'])
+	arquivo_origem = os.path.join(caminho_origem['Diretorio'], caminho_origem['Arquivo'])
 
 	excel = win32com.client.Dispatch("Excel.Application")
-	varl_aberto = any(wb.FullName == r"C:\Users\paulo\OneDrive\Documentos\ADM PSM.xlsb" for wb in win32com.client.Dispatch("Excel.Application").Workbooks)
-	workbook = excel.Workbooks.Open(r"C:\Users\paulo\OneDrive\Documentos\ADM PSM.xlsb")
+	varl_aberto = any(wb.FullName == arquivo_origem for wb in win32com.client.Dispatch("Excel.Application").Workbooks)
+	workbook = excel.Workbooks.Open(arquivo_origem)
 	sheet = workbook.Sheets("PROJETOS")
 	try:
 		log_info = "F2"
@@ -33,7 +34,7 @@ def etl_ExportaProjetos():
 		df = df.map(lambda x: str(x).replace('\r', '') if isinstance(x, str) else x)
 
 		log_info = "F4"
-		df.to_csv(file_name)
+		df.to_csv(arquivo_destino)
 
 		log_info = "F0"
 

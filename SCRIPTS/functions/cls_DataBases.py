@@ -57,7 +57,7 @@ def prc_executa_local(sql_query, params, modo):
 			params_falha = {}
 		else:
 			params_falha = params
-		fnc_salvar_falha('SQL_SERVER', conn_log, sql_query, params_falha)
+		fnc_salvar_falha('SQL_SERVER', varl_detail, sql_query, params_falha)
 		log_info = "F99"
 
 	finally:
@@ -98,7 +98,7 @@ def prc_executa_online(sql_query, params, modo):
 		varl_detail = f"Erro na etapa {log_info}, {e}"
 		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		if modo not in ['SELECT', 'COUNT']:
-			fnc_salvar_falha('UMBLER', conn_log, sql_query, params)
+			fnc_salvar_falha('UMBLER', varl_detail, sql_query, params)
 		log_info = "F99"
 		raise Exception(varl_detail)
 
@@ -215,7 +215,7 @@ def fnc_executar_modificacao(conexao, query, params=None):
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
-		fnc_salvar_falha('SQL_SERVER', conexao, query, params)
+		fnc_salvar_falha('SQL_SERVER', varl_detail, query, params)
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
 
@@ -247,7 +247,7 @@ def fnc_executar_online(conexao, query, params=None):
 
 	except Exception as e:
 		varl_detail = f"{log_info}, {e}"
-		fnc_salvar_falha('UMBLER', conexao, query, params)
+		fnc_salvar_falha('UMBLER', varl_detail, query, params)
 		log_registra(var_modulo=__name__, var_funcao=inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
 		log_info = "F99"
 		raise

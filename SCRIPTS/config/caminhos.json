@@ -6,6 +6,7 @@
 	  {"Nome": "Log_Sumarizado","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "pythons.log"},
 	  {"Nome": "Json_Fila_WA","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "fila.json"},
       {"Nome": "Json_Falhas_SQL","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\logs\\","Arquivo": "falhas.json"},
+	  {"Nome": "Base_PSM_Excel","Diretorio": "C:\\Users\\paulo\\OneDrive\\Documentos\\","Arquivo": "ADM PSM_2025.xlsb"},
       {"Nome": "Base_Projetos_Excel","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "projetos.csv"},
       {"Nome": "Base_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "gantt.csv"},
       {"Nome": "Imagem_Projetos_Gantt","Diretorio": "G:\\Meu Drive\\PSM\\01 - OPERACIONAL\\00_FONTES\\","Arquivo": "grafico_gantt.png"},

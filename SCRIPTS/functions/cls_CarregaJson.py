@@ -9,7 +9,7 @@ def json_caminho(nome = 'Json_Caminhos'):
             resultado = next((item for item in caminhos if item.get('Nome') == nome), None)
             return resultado if resultado else {}
      except FileNotFoundError:
-        print("Arquivo não encontrado.")
+        print(nome, " não encontrado.")
         return []
      except json.JSONDecodeError:
         print("Erro ao ler o arquivo JSON.")
@@ -22,7 +22,7 @@ def json_dados(arquivo):
             dados = json.load(arquivo_json)
             return dados if dados else {}
     except FileNotFoundError:
-        print("Arquivo não encontrado.")
+        print(arquivo, " não encontrado.")
         return []
     except json.JSONDecodeError as e:
         print("Erro ao ler o arquivo JSON.")
@@ -70,7 +70,7 @@ def json_atualiza(arquivo, grupo, nome, campo, atualizacao):
         else:
             print(f"Registro com o nome '{nome}' não encontrado.")
     except FileNotFoundError:
-        print("Arquivo não encontrado.")
+        print(arquivo, " não encontrado.")
     except json.JSONDecodeError as e:
         print(f"Erro ao ler o arquivo JSON: {e}")
     except IOError as e:
@@ -78,6 +78,10 @@ def json_atualiza(arquivo, grupo, nome, campo, atualizacao):
 
 
 def main():
+    # x = json_dados(r'C:\Users\paulo\OneDrive\Documentos\github\pythonProject\SCRIPTS\config\mapa_objetos.json')['objetos']
+    # for item in x:
+    #     if item['Nome'] == 'IMG_OPTION':
+    #         print(item.get('Texto', None))
     pass
 
 if __name__ == "__main__":
