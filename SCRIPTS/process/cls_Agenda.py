@@ -4,22 +4,22 @@ import traceback
 import inspect
 from blessed import Terminal
 from datetime import datetime, timedelta
-from SCRIPTS.functions.cls_TelaLog import desenhar_tela, fn_ultimo_log
+from SCRIPTS.functions.cls_TelaLog import desenhar_tela, fnc_UltimoLog
 from SCRIPTS.functions.cls_Logging import main as log_registra
 from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
 from SCRIPTS.functions.cls_DiasUteis import df_DiasUteis
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
-from SCRIPTS.functions.cls_OutWhatsapp import main as prc_EnviaFila
-from SCRIPTS.process.cls_Exporta import main as exporta_main
+from SCRIPTS.functions.cls_OutWhatsapp import exe_OutWhatsapp
+from SCRIPTS.process.cls_Exporta import exe_ExportaBase
 from SCRIPTS.process.cls_GooglePalavras import main as google_main
-from SCRIPTS.process.cls_VerificaMail import main as leads_main
-from SCRIPTS.process.cls_GanttProjetos import main as gantt_main
-from SCRIPTS.process.cls_LimpaLogs import main as limpeza_logs
-from SCRIPTS.process.cls_AtualizaFonteLocal import main as fontes_local
-from SCRIPTS.process.cls_AtualizaFonteOnline import main as fontes_online
-from SCRIPTS.process.cls_LimpaGoogleDrive import main as limpeza_drive
+from SCRIPTS.process.cls_VerificaMail import exe_VerificalMail
+from SCRIPTS.process.cls_GanttProjetos import exe_GanttProjetos
+from SCRIPTS.process.cls_LimpaLogs import exe_LimpaLogs
+from SCRIPTS.process.cls_AtualizaFonteLocal import exe_AtualizaFonteLocal
+from SCRIPTS.process.cls_AtualizaFonteOnline import exe_AtualizaFonteOnline
+from SCRIPTS.process.cls_LimpaGoogleDrive import exe_LimpaGoogleDrive
 from SCRIPTS.process.cls_FFMPEG_Video import prc_teste_dmb, prc_processa_dmb, prc_processa_fut
-from SCRIPTS.process.cls_ContaPJ import main as report_financeiro
+from SCRIPTS.process.cls_ContaPJ import exe_ContaPJ
 
 
 def etl_VerificaAgendamento(processo, horario_atual):
@@ -96,9 +96,6 @@ def main():
                         for processo in processos_futuros:
                             if etl_VerificaAgendamento(processo, horario_atual):
                                 resultado = etl_ExecutaProcesso(processo, proxima_execucao)
-                                exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-                                exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-                                exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
                     desenhar_tela(term, proxima_execucao, processos_futuros if processos_futuros else processos_filtrados, False, True, False)
                     varg_erro = False
                 else:
@@ -108,12 +105,12 @@ def main():
 
                 # Inicia Agendamento
                 for processo in processos_filtrados:
-                    ultimo = fn_ultimo_log(processo['Classe'])
+                    ultimo = fnc_UltimoLog(processo['Processo'])
                     horario_processo = datetime.strptime(processo['Horario'], "%H:%M")
                     if processo['Classe'] != "N/A":
                         if processo["Frequencia"] == "Diario" or processo["Frequencia"] == "Semanal":
                             if processo['Predecessor'] != 'N/A': # SE TIVER PREDECESSOR
-                                ultimo_predecessor = fn_ultimo_log(processo['Predecessor'])
+                                ultimo_predecessor = fnc_UltimoLog(processo['Predecessor'])
                                 if ultimo_predecessor.date() == horario_atual.date() and ultimo.date() != horario_atual.date(): # PREDECESSOR FOI EXECUTADO HOJE E PROCESSO NÃO FOI EXECUTADO HOJE
                                     intervalo = timedelta(hours=int(1), minutes=int(0))
                                     while horario_processo <= horario_atual:
@@ -144,7 +141,7 @@ def main():
                     proxima_execucao = f"{proximo_horario['Nome']}, {proximo_horario['Horario']}"
                 else:
                     proxima_execucao = "Nenhuma execução programada."
-                #exec_info += "\t\tMF\n"
+            exec_info += "\t\tMF\n"
 
     except Exception as e:
         exec_info += "\t\t\tM99\n"

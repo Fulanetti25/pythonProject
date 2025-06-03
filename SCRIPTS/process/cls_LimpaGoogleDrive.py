@@ -109,7 +109,7 @@ def prc_excluir_pastas_vazias(drive):
     return {"Resultado": pastas_excluidas, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_LimpaGoogleDrive():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
     exec_info = "\nLI\n"

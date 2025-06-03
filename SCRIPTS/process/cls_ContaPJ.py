@@ -295,7 +295,7 @@ def fnc_movimentacoes():
 	return {"Resultado": fnc_convert_to_float(df_resultados), 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_ContaPJ():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info

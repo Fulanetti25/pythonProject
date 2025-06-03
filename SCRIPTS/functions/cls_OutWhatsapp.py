@@ -550,7 +550,7 @@ def fnc_SalvarFila(numero, mensagem, anexo):
 	return {"Resultado": "Inserido na fila", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_OutWhatsapp():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info

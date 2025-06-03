@@ -52,6 +52,36 @@ def etl_ExportaProjetos():
 	return {"Resultado": str(df.shape), 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
+def exe_ExportaBase():
+	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
+
+	global exec_info
+	exec_info = "\nLI\n"
+
+	exec_info += "\tGI\n"
+	varg_erro = False
+	exec_info += "\tGF\n"
+
+	exec_info += "\t\tM1\n"
+	try:
+		resultado = etl_ExportaProjetos()
+		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+		exec_info += "\t\tMF\n"
+		varg_erro = False
+
+	except Exception as e:
+		exec_info += "\t\t\tM99\n"
+		exec_info += f"Traceback: {traceback.format_exc()}"
+		varg_erro = True
+
+	finally:
+		exec_info += "LF\n"
+		log_registra(varg_modulo, inspect.currentframe().f_code.co_name, var_detalhe=exec_info, var_erro=varg_erro)
+		logging.shutdown()
+
+
 def main():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 

@@ -26,7 +26,7 @@ def fn_validate_date(date_str):
         return False
 
 
-def fn_log_recupera(processo=None, data=None):
+def fnc_LogRecupera(processo=None, data=None):
     log_info = "F1"
     varl_detail = None
 
@@ -63,8 +63,8 @@ def fn_log_recupera(processo=None, data=None):
     return registros_final
 
 
-def fn_ultimo_log(nome_classe):
-    registros = fn_log_recupera(nome_classe)
+def fnc_UltimoLog(nome_classe):
+    registros = fnc_LogRecupera(nome_classe)
 
     if registros:
         registros_sucesso = [registro for registro in registros if "Sucesso" in registro]
@@ -110,7 +110,7 @@ def tela_superior_esq(term):
     exibir_texto(term, COLUNA_ESQ, LINHA_CABECALHO, "Gerenciador de Processos Pytão", estilo=term.underline + term.cyan)
     exibir_texto(term, COLUNA_ESQ + 70, LINHA_CABECALHO, str(datetime.now()), estilo=term.bold_blue)
     exibir_texto(term, COLUNA_ESQ, LINHA_DADOS, "Últimos Logs:", estilo=term.underline + term.bold_red)
-    registros = fn_log_recupera()
+    registros = fnc_LogRecupera()
     linha_y = LINHA_DADOS + 1
     for registro in registros:
         if linha_y >= LINHA_DADOS + 54:
@@ -141,7 +141,7 @@ def tela_superior_dir(term, processos):
         line += 1
         for proc in procs:
             nome_formatado = proc['Nome']
-            ultimo_log = fn_ultimo_log(proc['Classe'])
+            ultimo_log = fnc_UltimoLog(proc['Processo'])
             ultimo_log = "" if not ultimo_log else ultimo_log.date()
             exibir_texto(term, COLUNA_DIR, line, f"{nome_formatado:<35} | Classe: {proc['Classe']:<24} | Horário: {proc['Horario']:<5} " f"| Dia: {proc['Dia']:<10} | Intervalo: {proc['Intervalo'][-3:]} |: {ultimo_log}")
             line += 1
@@ -250,21 +250,14 @@ def main():
 
     exec_info += "\tGI\n"
     varg_erro = False
-
-    term = Terminal()
-    proxima_execucao = "Teste Proxima"
-
-    processos = json_caminho('Json_Processos')
-    info_processos = json_dados(os.path.join(processos['Diretorio'], processos['Arquivo']))
-    lista_processos = info_processos["processos"]
     exec_info += "\tGF\n"
 
     exec_info += "\t\tMI\n"
     try:
-        with term.fullscreen(), term.cbreak(), term.hidden_cursor():
-            while True:
-                desenhar_tela(term, proxima_execucao, lista_processos, True)
-                time.sleep(3)
+        # resultado = fnc_LogRecupera('prc_teste_dmb')
+        # print(resultado)
+        resultado = fnc_UltimoLog('prc_teste_dmb')
+        print(resultado)
 
     except Exception as e:
         exec_info += "\t\t\tM99\n"
@@ -278,4 +271,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print(exec_info)

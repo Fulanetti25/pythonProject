@@ -395,7 +395,7 @@ def select_case_pasta(valor):
         return "NID"
 
 
-def main():
+def exe_VerificalMail():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     connection_result = prc_connect_email()
     mail = connection_result['Resultado']

@@ -174,7 +174,7 @@ def prc_GeraResumo():
 	return {"Resultado": "Arquivo gerado", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_LimpaLogs():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info

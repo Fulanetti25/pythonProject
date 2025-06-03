@@ -38,7 +38,7 @@ def fnc_calcula_diferenca(tabela1, tabela2):
     return {"Resultado": diferenca, 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_AtualizaFonteOnline():
     varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
     global exec_info
     exec_info = "\nLI\n"

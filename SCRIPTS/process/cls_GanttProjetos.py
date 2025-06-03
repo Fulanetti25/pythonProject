@@ -177,7 +177,7 @@ def enviar_grafico_gantt():
 
 	return {"Resultado": str(resultado), 'Status_log': log_info, 'Detail_log': varl_detail}
 
-def main():
+def exe_GanttProjetos():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info

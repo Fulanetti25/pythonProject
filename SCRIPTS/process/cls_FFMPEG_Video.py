@@ -384,7 +384,7 @@ def fnc_montar_teste(caminho, arquivo, legenda, inferior, leg_detalhe):
 			inicio_legenda = float(leg_detalhe['inicio_legenda']) + deslocamento
 			legenda_clips = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda), inicio_legenda, size, duracao_maxima=video_sup.duration)
 			compose_teste = CompositeVideoClip([compose_01, *legenda_clips])
-			nome_arquivo = os.path.join(pasta_destino, f"t_legenda {inicio_legenda} {arquivo}.mp4")
+			nome_arquivo = os.path.join(pasta_destino, f"t_legenda {inicio_legenda} {arquivo}")
 			compose_teste.write_videofile(nome_arquivo, codec="libx264", fps=6)
 
 		log_info = "F0"
@@ -572,6 +572,11 @@ def prc_teste_dmb():
 				nome_lrc = os.path.splitext(nome_arquivo.replace('Drumeibes','LEGENDA'))[0] + '.lrc'
 				nome_intro = doc_default['template_intro']
 				nome_final = doc_default['template_outro']
+				print(nome_arquivo, os.path.exists(os.path.join(caminho_arquivo, nome_arquivo)))
+				print(nome_inferior, os.path.exists(os.path.join(caminho_arquivo, nome_inferior)))
+				print(nome_lrc, os.path.exists(os.path.join(caminho_arquivo, nome_lrc)))
+				print(nome_intro, os.path.exists(os.path.join(caminho_arquivo, nome_intro)))
+				print(nome_final, os.path.exists(os.path.join(caminho_arquivo, nome_final)))
 				if (    os.path.exists(os.path.join(caminho_arquivo, nome_arquivo))
 					and os.path.exists(os.path.join(caminho_arquivo, nome_inferior))
 					and os.path.exists(os.path.join(caminho_arquivo, nome_lrc))
@@ -712,8 +717,10 @@ def prc_processa_fut():
 
 
 def main():
-	prc_processa_fut()
-
+	pass
+	# prc_processa_fut()
+	# prc_teste_dmb()
+	prc_processa_dmb()
 
 if __name__ == "__main__":
 	main()

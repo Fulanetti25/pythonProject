@@ -1,135 +1,46 @@
-import requests
 import os
 import logging
 import traceback
 import inspect
-import time
 import pandas as pd
-from bs4 import BeautifulSoup
 from datetime import datetime
+from serpapi import GoogleSearch
+from decouple import config
 from SCRIPTS.functions.cls_Logging import main as log_registra
-from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados
+from SCRIPTS.functions.cls_CarregaJson import json_caminho, json_dados, json_registra
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 
 
-def ExtrairPalavras(palavra = 'planilha+personalizada'):
+SERP_API = config('FULA_SERP_API')
+
+
+def fnc_verifica_anuncio(file_name, out_name) -> dict:
 	log_info = "F1"
 	varl_detail = None
-
-	headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.3'}
-
-	session = requests.Session()
-	session.headers.update(headers)
-	response = requests.get('https://www.google.com/search?q=' + palavra, headers=headers)
-
-	soup = BeautifulSoup(response.content, 'html.parser')
-	#session.cookies.clear()
-
-	texto_pagina = soup.get_text(separator='\n')
-	linhas = texto_pagina.split('\n')
-	print(linhas)
-	breakpoint()
-
-	df_temp = pd.DataFrame()
-	df = pd.DataFrame(linhas, columns=['Texto'])
-	df = df.map(lambda x: str(x).replace(';', ',') if isinstance(x, str) else x)
-	df = df.map(lambda x: str(x).replace('\n', '') if isinstance(x, str) else x)
-	df = df.map(lambda x: str(x).replace('\r', '') if isinstance(x, str) else x)
-	if not df.empty: df.index += 1
-	pd.set_option('display.max_columns', None)
-	pd.set_option('display.max_rows', None)
-
-	caminhos = json_caminho('Base_Pesquisas_Google')
-	file_dir = caminhos['Diretorio']
-	file_name = os.path.join(file_dir, caminhos['Arquivo'])
+	resultados_gerais = []
 
 	try:
 		log_info = "F2"
-		filtro = df[df['Texto'].str.contains(r'.* segundos\)', regex=True)]
-		if not filtro.empty:
-			ignore_until = filtro.index[0]
-			ignore_after = df[df['Texto'].str.contains('Resultados da pesquisa', regex=True)].index[0]
-			ignore_ending = df[df['Texto'].str.contains('Navegação nas páginas', regex=True)].index[0]
-			df_add_filtered = df.loc[ignore_until + 1: ignore_after]
-			df_add_filtered = df_add_filtered.Texto.copy()
-			patrocinado_indices = df_add_filtered[df_add_filtered.str.contains('Patrocinado')].index
+		dados = json_dados(file_name)
+		palavras = dados['palavras']
 
-			anuncios = []
-			for i in patrocinado_indices:
-				bloco = {}
-				bloco['Palavra'] = palavra
-				bloco['Tipo'] = df_add_filtered.loc[i]
-				bloco['Anuncio'] = df_add_filtered.loc[i + 1]
-				bloco['Nome Empresa'] = df_add_filtered.loc[i + 2]
-				bloco['Site Empresa'] = df_add_filtered.loc[i + 3]
-				detalhes = []
-				for j in range(i + 4, max(list(df_add_filtered.index))):
-					if df_add_filtered.loc[j] == 'Patrocinado':
-						break
-					detalhes.append(df_add_filtered.loc[j])
-				bloco['Detalhe Anuncio'] = ' '.join(detalhes)
-				anuncios.append(bloco)
-			df_anuncios = pd.DataFrame(anuncios)
+		for palavra_chave in palavras:
+			params = {
+				"engine": "google",
+				"q": palavra_chave,
+				"location": "Brazil",
+				"hl": "pt-br",
+				"gl": "br",
+				"api_key": SERP_API,
+			}
+			search = GoogleSearch(params)
+			results = search.get_dict()
+			resultados_gerais.append(results)
 
-			df_res_filtered = df.loc[ignore_after:ignore_ending + 2]
-			df_res_filtered = df_res_filtered.Texto.copy()
-			sites_indices = df_res_filtered[df_res_filtered.str.contains('http')].drop_duplicates().index
-
-			organico = []
-			for i in sites_indices:
-				bloco = {}
-				bloco['Palavra'] = palavra
-				bloco['Tipo'] = 'Organico'
-				bloco['Anuncio'] = df_res_filtered.loc[i - 2]
-				bloco['Nome Empresa'] = df_res_filtered.loc[i - 1]
-				bloco['Site Empresa'] = df_res_filtered.loc[i]
-				detalhes = []
-				if (sites_indices > i).any():
-					proximo_indice = sites_indices[sites_indices > i].min()
-				else:
-					proximo_indice = max(list(df_res_filtered.index))
-				for j in range(i + 1, proximo_indice - 2):
-					detalhes.append(df_res_filtered.loc[j])
-				bloco['Detalhe Anuncio'] = ' '.join(detalhes)
-				organico.append(bloco)
-			df_organico = pd.DataFrame(organico)
-
-		else:
-			pass
-
-		log_info = "F3"
-		if 'df_anuncios' not in locals():
-			df_anuncios = pd.DataFrame()
-		if 'df_organico' not in locals():
-			df_organico = pd.DataFrame()
-		if df_anuncios.empty and df_organico.empty:
-			ValueError("Ambos os DataFrames, df_anuncios e df_organico, estão vazios ou não foram gerados.")
-
-		df_final = pd.concat([df_anuncios, df_organico], ignore_index=True)
-		df_final = pd.concat([df_anuncios, df_organico], ignore_index=True)
-		df_final['DATA_HORA'] = datetime.now()
-		df_final['RANK'] = range(1, len(df_final) + 1)
-		df_temp = pd.concat([df_temp, df_final], ignore_index=True)
-
-		log_info = "F4"
-		if os.path.exists(file_name):
-			df_existente = pd.read_csv(file_name)
-			df_concatenado = pd.concat([df_existente, df_temp], ignore_index=True)
-		else:
-			df_concatenado = df_temp
-		df_concatenado.to_csv(file_name, index=False)
+		os.makedirs(os.path.dirname(out_name), exist_ok=True)
+		json_registra(resultados_gerais, out_name)
 
 		log_info = "F0"
-
-	except IndexError as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "F99"
-
-	except ValueError as e:
-		varl_detail = f"Erro na etapa {log_info}, {e}"
-		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
-		log_info = "F99"
 
 	except Exception as e:
 		varl_detail = f"Erro na etapa {log_info}, {e}"
@@ -137,10 +48,97 @@ def ExtrairPalavras(palavra = 'planilha+personalizada'):
 		log_info = "F99"
 		raise
 
-	finally:
-		pass
+	return {"Resultado": resultados_gerais, 'Status_log': log_info, 'Detail_log': varl_detail}
 
-	return {"Resultado": str(palavra), 'Status_log': log_info, 'Detail_log': varl_detail}
+
+def fnc_formatar_palavras(dados_raw: dict, palavra: str) -> pd.DataFrame:
+	log_info = "F1"
+	varl_detail = None
+	resultados = []
+	rank = 1
+	agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+	try:
+		log_info = "F2"
+		for ad in dados_raw.get("ads", []):
+			resultados.append({
+				"Palavra": palavra,
+				"Tipo": "patrocinado",
+				"Anuncio": ad.get("title", ""),
+				"Nome Empresa": ad.get("displayed_link", ""),
+				"Site Empresa": ad.get("link", ""),
+				"Detalhe Anuncio": ad.get("snippet", ""),
+				"DATA_HORA": agora,
+				"RANK": rank
+			})
+			rank += 1
+
+		log_info = "F3"
+		for item in dados_raw.get("organic_results", []):
+			resultados.append({
+				"Palavra": palavra,
+				"Tipo": "organico",
+				"Anuncio": item.get("title", ""),
+				"Nome Empresa": item.get("displayed_link", ""),
+				"Site Empresa": item.get("link", ""),
+				"Detalhe Anuncio": item.get("snippet", ""),
+				"DATA_HORA": agora,
+				"RANK": rank
+			})
+			rank += 1
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": pd.DataFrame(resultados), 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def prc_ProcessarPalavras():
+	log_info = "F1"
+	varl_detail = None
+	df_concatenado = pd.DataFrame()
+	caminhos = json_caminho('Raw_Pesquisas_Google')
+	raw_file = os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])
+	caminhos = json_caminho('Base_Pesquisas_Google')
+	out_file = os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])
+	caminhos = json_caminho('Json_Palavras')
+	word_file = os.path.join(caminhos['Diretorio'], caminhos['Arquivo'])
+
+	try:
+		log_info = "F2"
+		fnc_verifica_anuncio(word_file, raw_file)
+		raw_data = json_dados(raw_file)
+
+		log_info = "F3"
+		palavras_dict = json_dados(word_file)
+		lista_palavras = palavras_dict.get("palavras", [])
+
+		for i, dados_raw in enumerate(raw_data):
+			if i >= len(lista_palavras):
+				continue
+			palavra = lista_palavras[i]
+			res_formatado = fnc_formatar_palavras(dados_raw, palavra)
+			df_formatado = res_formatado['Resultado']
+			modo = 'a' if os.path.exists(out_file) else 'w'
+			cabecalho = not os.path.exists(out_file)
+
+		log_info = "F4"
+		df_concatenado.to_csv(out_file, mode=modo, header=cabecalho, index=False, sep=';', encoding='utf-8')
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+		raise
+
+	return {"Resultado": "Dados atualizados com sucesso", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
 def main():
@@ -151,19 +149,14 @@ def main():
 
 	exec_info += "\tGI\n"
 	varg_erro = None
-	palavras = json_caminho('Json_Palavras')
-	file_dir = palavras['Diretorio']
-	file_name = os.path.join(file_dir, palavras['Arquivo'])
-	info_palavras = json_dados(os.path.join(palavras['Diretorio'], palavras['Arquivo']))
 	exec_info += "\tGF\n"
 
 	exec_info += "\t\tMI\n"
 	try:
-		for index, palavra in enumerate(info_palavras['palavras']):
-			resultado = ExtrairPalavras(palavra)
-			exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
-			exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
-			exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
+		resultado = prc_ProcessarPalavras()
+		exec_info += f"\t\t\t\tResultado: {resultado['Resultado']}\n"
+		exec_info += f"\t\t\t\tStatus: {resultado['Status_log']}\n"
+		exec_info += f"\t\t\t\tDetail: {resultado['Detail_log']}\n"
 		exec_info += "\t\tMF\n"
 		varg_erro = False
 

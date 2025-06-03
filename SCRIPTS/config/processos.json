@@ -7,7 +7,7 @@
       "Dia": "All",
       "Classe": "cls_VerificaMail",
       "Nome": "Coletar Leads do Email",
-      "Processo": "leads_main",
+      "Processo": "exe_VerificalMail",
       "Predecessor": "N/A",
       "Descricao": "Processo para agilizar a informação de entrada de clientes."
     },
@@ -18,15 +18,15 @@
       "Dia": "All",
       "Classe": "cls_OutWhatsapp",
       "Nome": "Disparo da Fila no WA",
-      "Processo": "prc_EnviaFila",
+      "Processo": "exe_OutWhatsapp",
       "Predecessor": "N/A",
       "Descricao": "Disparao Leads e mensagens enfileirados no Whatsapp nos ultimos intervalos."
     },
     {
-      "Horario": "08:05",
-      "Frequencia": "Intervalo",
-      "Intervalo": "00:10",
-      "Dia": "Util",
+      "Horario": "10:05",
+      "Frequencia": "Diario",
+      "Intervalo": "N/A",
+      "Dia": "All",
       "Classe": "cls_GooglePalavras",
       "Nome": "Extração Google Palavras",
       "Processo": "N/A",
@@ -51,7 +51,7 @@
       "Dia": "All",
       "Classe": "cls_Exporta",
       "Nome": "Exportação Base Projetos",
-      "Processo": "exporta_main",
+      "Processo": "exe_ExportaBase",
       "Predecessor": "N/A",
       "Descricao": "Fornecimento de dados de projetos em andamento para reports diarios."
     },
@@ -62,8 +62,8 @@
       "Dia": "Util",
       "Classe": "cls_GanttProjetos",
       "Nome": "Relatório Gantt de Projetos",
-      "Processo": "gantt_main",
-      "Predecessor": "cls_Exporta",
+      "Processo": "exe_GanttProjetos",
+      "Predecessor": "exe_ExportaBase",
       "Descricao": "Relatório diario em Whatsapp para acompanhamento de projetos em andamento."
     },
     {
@@ -73,7 +73,7 @@
       "Dia": "All",
       "Classe": "cls_AtualizaFonteLocal",
       "Nome": "Atualizar fontes de dados",
-      "Processo": "fontes_local",
+      "Processo": "exe_AtualizaFonteLocal",
       "Predecessor": "N/A",
       "Descricao": "Atualizar as fontes no banco de dados local."
     },
@@ -84,8 +84,8 @@
       "Dia": "All",
       "Classe": "cls_AtualizaFonteOnline",
       "Nome": "Atualizar fontes de dados do Umbler",
-      "Processo": "fontes_online",
-      "Predecessor": "cls_AtualizaFonteLocal",
+      "Processo": "exe_AtualizaFonteOnline",
+      "Predecessor": "exe_AtualizaFonteLocal",
       "Descricao": "Atualizar as fontes no banco de dados online."
     },
 	    {
@@ -106,7 +106,7 @@
       "Dia": "Util",
       "Classe": "cls_LimpaLogs",
       "Nome": "Limpeza de Logs",
-      "Processo": "limpeza_logs",
+      "Processo": "exe_LimpaLogs",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 3 dias nos arquivos de Log e Google e gerar relatório"
     },
@@ -139,7 +139,7 @@
       "Dia": "Sunday",
       "Classe": "cls_ContaPJ",
       "Nome": "Relatório Contas PJ",
-      "Processo": "report_financeiro",
+      "Processo": "exe_ContaPJ",
       "Predecessor": "N/A",
       "Descricao": "Relatório semanal em Whatsapp para acompanhamento de fluxo da conta corrente e valores comprometidos."
     },
@@ -172,15 +172,15 @@
       "Dia": "Thursday",
       "Classe": "cls_LimpaGoogleDrive",
       "Nome": "Limpeza do Google Drive",
-      "Processo": "limpeza_drive",
+      "Processo": "exe_LimpaGoogleDrive",
       "Predecessor": "N/A",
       "Descricao": "Limpar histórico anterior a 24 meses nas pastas DEV"
     },
     {
-      "Horario": "11:30",
+      "Horario": "12:00",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Wednesday",
+      "Dia": "Saturday",
       "Classe": "cls_FFMPEG_Video",
       "Nome": "Pré-Teste Drumeibes",
       "Processo": "prc_teste_dmb",
@@ -188,10 +188,10 @@
       "Descricao": "Processar automaticamente teste dos arquivos da DRUMEIBES"
     },
     {
-      "Horario": "11:30",
+      "Horario": "08:50",
       "Frequencia": "Semanal",
       "Intervalo": "N/A",
-      "Dia": "Saturday",
+      "Dia": "Sunday",
       "Classe": "cls_FFMPEG_Video",
       "Nome": "Processamento Drumeibes",
       "Processo": "prc_processa_dmb",
