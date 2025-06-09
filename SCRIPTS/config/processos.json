@@ -29,7 +29,7 @@
       "Dia": "All",
       "Classe": "cls_GooglePalavras",
       "Nome": "Extração Google Palavras",
-      "Processo": "N/A",
+      "Processo": "exe_GooglePalavras",
       "Predecessor": "N/A",
       "Descricao": "Extracao intervalo para acompanhamento de concorrencia."
     },
@@ -101,7 +101,7 @@
     },
     {
       "Horario": "17:25",
-      "Frequencia": "Diário",
+      "Frequencia": "Diario",
       "Intervalo": "N/A",
       "Dia": "Util",
       "Classe": "cls_LimpaLogs",

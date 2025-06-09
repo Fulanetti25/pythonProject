@@ -11,7 +11,7 @@ from SCRIPTS.functions.cls_DiasUteis import df_DiasUteis
 from SCRIPTS.functions.cls_NomeClasse import fnc_NomeClasse
 from SCRIPTS.functions.cls_OutWhatsapp import exe_OutWhatsapp
 from SCRIPTS.process.cls_Exporta import exe_ExportaBase
-from SCRIPTS.process.cls_GooglePalavras import main as google_main
+from SCRIPTS.process.cls_GooglePalavras import exe_GooglePalavras
 from SCRIPTS.process.cls_VerificaMail import exe_VerificalMail
 from SCRIPTS.process.cls_GanttProjetos import exe_GanttProjetos
 from SCRIPTS.process.cls_LimpaLogs import exe_LimpaLogs

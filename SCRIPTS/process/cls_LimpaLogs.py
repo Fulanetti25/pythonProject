@@ -19,12 +19,12 @@ def prc_LimparPesquisas():
 
 	try:
 		log_info = "F2"
-		df = pd.read_csv(file_name, parse_dates=['DATA_HORA'])
+		df = pd.read_csv(file_name, sep=';', parse_dates=['DATA_HORA'])
 		data_limite = datetime.now() - timedelta(days=31)
 		df = df[df['DATA_HORA'] > data_limite]
 
 		log_info = "F3"
-		df.to_csv(file_name, index=False)
+		df.to_csv(file_name, sep=';', index=False)
 
 		log_info = "F0"
 
@@ -213,6 +213,5 @@ def exe_LimpaLogs():
 		logging.shutdown()
 
 
-if __name__ == "__main__":
-	main()
-	print(exec_info)
+exe_LimpaLogs()
+print(exec_info)

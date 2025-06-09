@@ -62,28 +62,28 @@ def fnc_formatar_palavras(dados_raw: dict, palavra: str) -> pd.DataFrame:
 		log_info = "F2"
 		for ad in dados_raw.get("ads", []):
 			resultados.append({
+				"DATA_HORA": agora,
+				"RANK": rank,
 				"Palavra": palavra,
 				"Tipo": "patrocinado",
 				"Anuncio": ad.get("title", ""),
 				"Nome Empresa": ad.get("displayed_link", ""),
 				"Site Empresa": ad.get("link", ""),
-				"Detalhe Anuncio": ad.get("snippet", ""),
-				"DATA_HORA": agora,
-				"RANK": rank
+				"Detalhe Anuncio": ad.get("snippet", "")
 			})
 			rank += 1
 
 		log_info = "F3"
 		for item in dados_raw.get("organic_results", []):
 			resultados.append({
+				"DATA_HORA": agora,
+				"RANK": rank,
 				"Palavra": palavra,
 				"Tipo": "organico",
 				"Anuncio": item.get("title", ""),
 				"Nome Empresa": item.get("displayed_link", ""),
 				"Site Empresa": item.get("link", ""),
-				"Detalhe Anuncio": item.get("snippet", ""),
-				"DATA_HORA": agora,
-				"RANK": rank
+				"Detalhe Anuncio": item.get("snippet", "")
 			})
 			rank += 1
 
@@ -99,6 +99,7 @@ def fnc_formatar_palavras(dados_raw: dict, palavra: str) -> pd.DataFrame:
 
 
 def prc_ProcessarPalavras():
+	import csv
 	log_info = "F1"
 	varl_detail = None
 	df_concatenado = pd.DataFrame()
@@ -124,11 +125,12 @@ def prc_ProcessarPalavras():
 			palavra = lista_palavras[i]
 			res_formatado = fnc_formatar_palavras(dados_raw, palavra)
 			df_formatado = res_formatado['Resultado']
-			modo = 'a' if os.path.exists(out_file) else 'w'
-			cabecalho = not os.path.exists(out_file)
+			df_concatenado = pd.concat([df_concatenado, df_formatado], ignore_index=True)
 
 		log_info = "F4"
-		df_concatenado.to_csv(out_file, mode=modo, header=cabecalho, index=False, sep=';', encoding='utf-8')
+		modo = 'a' if os.path.exists(out_file) else 'w'
+		cabecalho = not os.path.exists(out_file)
+		df_concatenado.to_csv(out_file,	mode=modo, header=cabecalho, index=False, sep=';', encoding='utf-8', quotechar='"',	quoting=csv.QUOTE_ALL)
 
 		log_info = "F0"
 
@@ -141,7 +143,7 @@ def prc_ProcessarPalavras():
 	return {"Resultado": "Dados atualizados com sucesso", 'Status_log': log_info, 'Detail_log': varl_detail}
 
 
-def main():
+def exe_GooglePalavras():
 	varg_modulo = fnc_NomeClasse(str(inspect.stack()[0].filename))
 
 	global exec_info

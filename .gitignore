@@ -1,1 +1,4 @@
 .env
+# Ignorar config e assets
+SCRIPTS/config/
+SCRIPTS/assets/

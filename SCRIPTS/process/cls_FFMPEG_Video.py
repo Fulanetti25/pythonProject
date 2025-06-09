@@ -367,6 +367,8 @@ def fnc_montar_teste(caminho, arquivo, legenda, inferior, leg_detalhe):
 	varl_detail = None
 	pasta_destino = os.path.dirname(caminho)
 	size = (1080, 810)
+	idioma = leg_detalhe['idioma']
+	traducao = legenda.replace("LEGENDA", "TRADUCAO")
 
 	try:
 		log_info = "F2"
@@ -386,6 +388,10 @@ def fnc_montar_teste(caminho, arquivo, legenda, inferior, leg_detalhe):
 			compose_teste = CompositeVideoClip([compose_01, *legenda_clips])
 			nome_arquivo = os.path.join(pasta_destino, f"t_legenda {inicio_legenda} {arquivo}")
 			compose_teste.write_videofile(nome_arquivo, codec="libx264", fps=6)
+
+		log_info = "F5"
+		if not os.path.exists(os.path.join(caminho,traducao)):
+			prc_TraduzLetra(caminho, legenda, idioma)
 
 		log_info = "F0"
 
@@ -507,8 +513,149 @@ def fnc_montar_padrao(caminho, arquivo, legenda, inferior, intro, outro, leg_def
 		compose_01 = clips_array([[video_sup], [video_inf]])
 
 		log_info = "F7"
-		if not os.path.exists(os.path.join(caminho,traducao)):
-			prc_TraduzLetra(caminho, legenda, idioma)
+		legendas_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda),	float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
+		traducao_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, traducao), float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
+		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])
+		compose_main = compose_main.set_audio(video_sup.audio)
+		if compose_main.size != (1080, 1620):
+			raise ValueError(f"Tamanho final incorreto: {compose_main.size}, esperado: (1080, 810 x 2)")
+
+		log_info = "F8"
+		compose_final = concatenate_videoclips([compose_intro, compose_main, compose_outro])
+
+		log_info = "F9"
+		texto_faixa = TextClip(arquivo.replace('.mp4', ''), color='white', stroke_color='white', fontsize=40, font='Arial', size=(1080, 300))
+		texto_faixa = texto_faixa.set_duration(compose_final.duration)
+		texto_faixa = texto_faixa.set_position(("left", "bottom"))
+		compose_youtube = CompositeVideoClip([compose_final, texto_faixa], size=(1080, 1920))
+		compose_tiktok = compose_youtube.fx(vfx.speedx, factor=2.0)
+		compose_youtube.write_videofile(os.path.join(pasta_destino, 'YTB_' + arquivo), fps=24, threads=4)
+		compose_tiktok.write_videofile(os.path.join(pasta_destino, 'TKT_' + arquivo), fps=24, threads=4)
+
+		log_info = "F10"
+		fnc_dividir_fixo(os.path.join(os.path.dirname(caminho), 'YTB_' + arquivo), 60)
+		fnc_gerar_documento(arquivo, pasta_destino, leg_detalhe, tags, prefixo_creditos, descricao_padrao)
+
+		log_info = "F0"
+
+	except Exception as e:
+		varl_detail = f"Erro na etapa {log_info}, {e}"
+		log_registra(__name__, inspect.currentframe().f_code.co_name, var_detalhe=varl_detail, var_erro=True)
+		log_info = "F99"
+
+	finally:
+		pass
+
+	return {"Resultado": 'Arquivo gerado com sucesso', 'Status_log': log_info, 'Detail_log': varl_detail}
+
+
+def fnc_montar_pessoal(caminho, arquivo, legenda, inferior, intro, outro, leg_default, leg_detalhe):
+	log_info = "F1"
+	varl_detail = None
+	pasta_destino = os.path.dirname(caminho)
+	size = (1080, 810)
+	parte_duracao = 10
+	fonte_atma = leg_default['fonte_atma']
+	fonte_unicode = leg_default['fonte_unicode']
+	saudacoes = leg_default['saudacoes']
+	agradece = leg_default['agradece']
+	citacoes = [leg_detalhe['credito_drums'], leg_detalhe['credito_bass'], leg_detalhe['credito_inferior']]
+	idioma = leg_detalhe['idioma']
+	emoji_virado = leg_default['emoji_virado']
+	emoji_timido = leg_default['emoji_timido']
+	tags = list(leg_default['tags'])  # Faz uma cópia da lista original
+	prefixo_creditos = leg_default['prefixo_creditos']
+	descricao_padrao = leg_default['descricao_padrao']
+	traducao = legenda.replace("LEGENDA", "TRADUCAO")
+
+	try:
+		log_info = "F3"
+		# Composição INTRO
+		video_intro = VideoFileClip(os.path.join(caminho, intro)).subclip(0, 15).resize(size)
+		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_intro.duration)
+		slogan_clip = fnc_gerar_texto(texto=leg_default['slogan'],tamanho=70,cor='yellow',fonte=fonte_atma,dimensao=(1080, 100),tempo=15).set_position(("center", "top"))
+		emoji = ImageClip(emoji_virado).set_duration(video_intro.duration).set_position(("center", "bottom")).resize(0.5)
+
+		salto = 3
+		textos_saudacoes = []
+		for i, texto in enumerate(saudacoes):
+			inicio = (i + 1) * salto
+			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
+			draw = ImageDraw.Draw(img)
+			bbox = draw.textbbox((0, 0), texto, font=ImageFont.truetype(fonte_unicode, 70))
+			text_x = (size[0] - (bbox[2] - bbox[0])) // 2
+			text_y = (size[1] - (bbox[3] - bbox[1])) // 2 - 100
+			draw.text((text_x, text_y), texto, font=ImageFont.truetype(fonte_unicode, 70), fill="white")
+			img.save(f"temp_text.png")
+			clip = (ImageClip(f"temp_text.png").set_duration(salto).set_position("center").fadein(1).set_start(inicio))
+			textos_saudacoes.append(clip)
+			os.remove(f"temp_text.png")
+
+		inferior_intro = CompositeVideoClip([fundo, *textos_saudacoes, slogan_clip, emoji])
+		compose_intro = clips_array([[video_intro], [inferior_intro]])
+		compose_intro = compose_intro.set_audio(video_intro.audio)
+
+		log_info = "F4"
+		# Composição OUTRO
+		video_outro = VideoFileClip(os.path.join(caminho, outro)).subclip(0, 10).resize(size)
+		fundo = ColorClip(size=size, color=(0, 0, 0), duration=video_outro.duration)
+		slogan_clip = fnc_gerar_texto(texto=leg_default['slogan'],tamanho=70,cor='yellow',fonte=fonte_atma,dimensao=(1080, 100),tempo = 10).set_position(("center", "top"))
+		emoji = ImageClip(emoji_timido).set_duration(video_outro.duration).set_position(("center", "bottom")).resize(0.5)
+		clip_sup = TextClip("Agradecimentos aos mestres:", fontsize=70,	font=fonte_atma, color='white',	size=size, method='caption').set_duration(video_outro.duration).set_position(("center",-300))
+
+		textos_citacao = []
+		for i, texto in enumerate(citacoes[:2]):
+			clip = TextClip(texto, fontsize=70,	font=fonte_atma, color='white',	size=(size[0] - 40, None), method='caption').set_duration(video_outro.duration)
+			y = size[1] - (len(citacoes) - i) * 100
+			textos_citacao.append(clip.set_position(("center", y)))
+
+		salto = 2
+		textos_agradece = []
+		for i, texto in enumerate(agradece):
+			inicio = salto + i * salto
+			fonte = ImageFont.truetype(fonte_unicode, 70)
+			img = Image.new("RGBA", size=size, color=(0, 0, 0, 0))
+			draw = ImageDraw.Draw(img)
+			text_size = draw.textbbox((0, 0), texto, font=fonte)
+			text_height = text_size[3] - text_size[1]
+			text_y = (img.height - text_height) // 2 - 100
+			text_width = text_size[2] - text_size[0]
+			text_x = (img.width - text_width) // 2
+			draw.text((text_x, text_y), texto, font=fonte, fill="white")
+			img.save(f"temp_text.png")
+			clip = ImageClip(f"temp_text.png").set_duration(salto)
+			clip = clip.set_position("center").fadein(1)
+			textos_agradece.append(clip.set_start(inicio))
+			os.remove(f"temp_text.png")
+
+		superior_outro = CompositeVideoClip([video_outro, clip_sup, *textos_citacao])
+		inferior_outro = CompositeVideoClip([fundo, *textos_agradece, slogan_clip, emoji])
+		compose_outro = clips_array([[superior_outro], [inferior_outro]])
+		compose_outro = compose_outro.set_audio(video_outro.audio)
+
+		log_info = "F5"
+		# Composição PRINCIPAL
+		video_sup= (VideoFileClip(os.path.join(caminho, arquivo)).resize(size))
+		video_inf = (VideoFileClip(os.path.join(caminho, inferior)).subclip(0, video_sup.duration).resize(size))
+
+		num_partes = int(video_sup.duration // parte_duracao) + 1
+		textos_partes = []
+		for i in range(num_partes):
+			if i == num_partes - 1:
+				texto_duracao = video_sup.duration - (i * parte_duracao)  # Duração restante no vídeo
+			else:
+				texto_duracao = parte_duracao
+			texto_parte = TextClip(f'parte {i + 1}', color='yellow',stroke_color='black', fontsize=70, font='Arial')
+			texto_parte = (texto_parte.set_duration(texto_duracao).set_position(('right', 'bottom')).set_start(i * parte_duracao).set_end(i * parte_duracao + texto_duracao))
+			textos_partes.append(texto_parte)
+
+		texto_inferior = TextClip(citacoes[-1], color='yellow',stroke_color='black', fontsize=70, font='Arial')
+		texto_inferior = texto_inferior.set_duration(video_sup.duration).set_position((0, 800))
+
+		log_info = "F6"
+		compose_01 = clips_array([[video_sup], [video_inf]])
+
+		log_info = "F7"
 		legendas_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, legenda),	float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
 		traducao_musica = fnc_carregar_legendas_lrc(os.path.join(caminho, traducao), float(leg_detalhe['inicio_legenda']), size, duracao_maxima=video_sup.duration)
 		compose_main = CompositeVideoClip([compose_01, *textos_partes, texto_inferior, *legendas_musica, *traducao_musica])
